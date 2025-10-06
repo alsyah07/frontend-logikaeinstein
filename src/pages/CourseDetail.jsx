@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import './CourseDetail.css';
 
 const CourseDetail = () => {
@@ -8,184 +8,55 @@ const CourseDetail = () => {
   const [course, setCourse] = useState(null);
   const [activeTab, setActiveTab] = useState('description');
 
-  // Sample course data - in real app this would come from API
-  const coursesData = [
-    {
-      id: 1,
-      title: 'Matematika UTBK',
-      category: 'Matematika',
-      subcategory: 'Matematika UTBK',
-      image: '/assets/images/portfolio-01.jpg',
-      lessons: 50,
-      members: 234,
-      date: '2024-01-15',
-      level: 'Advanced',
-      instructor: 'admin',
-      rating: 5,
-      reviews: 234,
-      description: 'Kursus Matematika UTBK yang komprehensif untuk persiapan ujian masuk perguruan tinggi. Materi mencakup semua topik yang diujikan dalam UTBK dengan metode pembelajaran yang efektif dan mudah dipahami.',
-      workingHours: {
-        monday: '9:30 am - 6:00 pm',
-        tuesday: '9:30 am - 6:00 pm',
-        wednesday: '9:30 am - 6:00 pm',
-        thursday: '9:30 am - 6:00 pm',
-        friday: '9:30 am - 5:00 pm',
-        saturday: 'CLOSED',
-        sunday: 'CLOSED'
-      },
-      popularCourses: [
-        { id: 2, title: 'Fisika Kelas 9', members: 'Members only', rating: 5 },
-        { id: 3, title: 'Fisika Kelas 9', members: 'Members only', rating: 5 }
-      ]
-    },
-    {
-      id: 2,
-      title: 'Fisika UTBK',
-      category: 'Fisika',
-      subcategory: 'Fisika UTBK',
-      image: '/assets/images/portfolio-02.jpg',
-      lessons: 45,
-      members: 189,
-      date: '2024-01-10',
-      level: 'Intermediate',
-      instructor: 'admin',
-      rating: 4,
-      reviews: 189,
-      description: 'Kursus Fisika UTBK yang dirancang khusus untuk membantu siswa mempersiapkan ujian masuk perguruan tinggi dengan materi yang lengkap dan metode pembelajaran yang interaktif.',
-      workingHours: {
-        monday: '9:30 am - 6:00 pm',
-        tuesday: '9:30 am - 6:00 pm',
-        wednesday: '9:30 am - 6:00 pm',
-        thursday: '9:30 am - 6:00 pm',
-        friday: '9:30 am - 5:00 pm',
-        saturday: 'CLOSED',
-        sunday: 'CLOSED'
-      },
-      popularCourses: [
-        { id: 1, title: 'Matematika UTBK', members: 'Members only', rating: 5 },
-        { id: 3, title: 'Matematika Kelas 10', members: 'Members only', rating: 5 }
-      ]
-    },
-    {
-      id: 3,
-      title: 'Matematika Kelas 10',
-      category: 'Matematika',
-      subcategory: 'Matematika Kelas 10',
-      image: '/assets/images/portfolio-03.jpg',
-      lessons: 30,
-      members: 156,
-      date: '2024-01-05',
-      level: 'Beginner',
-      instructor: 'Pak Budi',
-      rating: 4,
-      reviews: 156,
-      description: 'Kursus Matematika untuk siswa kelas 10 dengan pendekatan yang mudah dipahami. Materi disusun secara sistematis mulai dari konsep dasar hingga aplikasi dalam soal-soal.',
-      workingHours: {
-        monday: '9:30 am - 6:00 pm',
-        tuesday: '9:30 am - 6:00 pm',
-        wednesday: '9:30 am - 6:00 pm',
-        thursday: '9:30 am - 6:00 pm',
-        friday: '9:30 am - 5:00 pm',
-        saturday: 'CLOSED',
-        sunday: 'CLOSED'
-      },
-      popularCourses: [
-        { id: 1, title: 'Matematika UTBK', members: 'Members only', rating: 5 },
-        { id: 4, title: 'Matematika Kelas 11', members: 'Members only', rating: 4 }
-      ]
-    },
-    {
-      id: 4,
-      title: 'Matematika Kelas 11',
-      category: 'Matematika',
-      subcategory: 'Matematika Kelas 11',
-      image: '/assets/images/portfolio-04.jpg',
-      lessons: 35,
-      members: 178,
-      date: '2024-01-08',
-      level: 'Intermediate',
-      instructor: 'Bu Sari',
-      rating: 4,
-      reviews: 178,
-      description: 'Kursus Matematika untuk siswa kelas 11 dengan materi yang lebih mendalam. Mencakup fungsi, trigonometri, dan konsep-konsep matematika tingkat menengah.',
-      workingHours: {
-        monday: '9:30 am - 6:00 pm',
-        tuesday: '9:30 am - 6:00 pm',
-        wednesday: '9:30 am - 6:00 pm',
-        thursday: '9:30 am - 6:00 pm',
-        friday: '9:30 am - 5:00 pm',
-        saturday: 'CLOSED',
-        sunday: 'CLOSED'
-      },
-      popularCourses: [
-        { id: 3, title: 'Matematika Kelas 10', members: 'Members only', rating: 4 },
-        { id: 5, title: 'Matematika Kelas 12', members: 'Members only', rating: 5 }
-      ]
-    },
-    {
-      id: 5,
-      title: 'Matematika Kelas 12',
-      category: 'Matematika',
-      subcategory: 'Matematika Kelas 12',
-      image: '/assets/images/portfolio-05.jpg',
-      lessons: 40,
-      members: 203,
-      date: '2024-01-12',
-      level: 'Advanced',
-      instructor: 'Dr. Ahmad',
-      rating: 5,
-      reviews: 203,
-      description: 'Kursus Matematika untuk siswa kelas 12 sebagai persiapan ujian akhir dan masuk perguruan tinggi. Materi mencakup kalkulus, statistika, dan topik-topik matematika tingkat lanjut.',
-      workingHours: {
-        monday: '9:30 am - 6:00 pm',
-        tuesday: '9:30 am - 6:00 pm',
-        wednesday: '9:30 am - 6:00 pm',
-        thursday: '9:30 am - 6:00 pm',
-        friday: '9:30 am - 5:00 pm',
-        saturday: 'CLOSED',
-        sunday: 'CLOSED'
-      },
-      popularCourses: [
-        { id: 1, title: 'Matematika UTBK', members: 'Members only', rating: 5 },
-        { id: 4, title: 'Matematika Kelas 11', members: 'Members only', rating: 4 }
-      ]
-    },
-    {
-      id: 6,
-      title: 'Fisika Kelas 12',
-      category: 'Fisika',
-      subcategory: 'Fisika Kelas 12',
-      image: '/assets/images/portfolio-06.jpg',
-      lessons: 38,
-      members: 167,
-      date: '2024-01-14',
-      level: 'Advanced',
-      instructor: 'Prof. Sari',
-      rating: 4,
-      reviews: 167,
-      description: 'Kursus Fisika untuk siswa kelas 12 dengan pendekatan konseptual dan praktis. Materi mencakup fisika modern, gelombang, dan topik-topik fisika tingkat lanjut.',
-      workingHours: {
-        monday: '9:30 am - 6:00 pm',
-        tuesday: '9:30 am - 6:00 pm',
-        wednesday: '9:30 am - 6:00 pm',
-        thursday: '9:30 am - 6:00 pm',
-        friday: '9:30 am - 5:00 pm',
-        saturday: 'CLOSED',
-        sunday: 'CLOSED'
-      },
-      popularCourses: [
-        { id: 2, title: 'Fisika UTBK', members: 'Members only', rating: 4 },
-        { id: 5, title: 'Matematika Kelas 12', members: 'Members only', rating: 5 }
-      ]
-    }
-  ];
+  // State untuk data mapel dan mapel detail
+  const [mapelData, setMapelData] = useState(null);
 
   useEffect(() => {
-    const foundCourse = coursesData.find(c => c.id === parseInt(id));
-    setCourse(foundCourse);
+    // Fetch data dari API
+    fetch(`http://localhost:3100/api/v1/sub_mapel/${id}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.data) {
+          const dataSubMapel = data.data;
+          const datajadwalmapel = data.mapel;
+
+          // Data mapel terkait
+          fetch(`http://localhost:3100/api/v1/mapel/${dataSubMapel.id_mapel}`)
+            .then(res => res.json())
+            .then(resMapel => {
+              if (resMapel.success) {
+                setMapelData(resMapel.data);
+              }
+            });
+               console.log(datajadwalmapel);
+
+          // Set data course
+          setCourse({
+            name: dataSubMapel.name,
+            id: dataSubMapel.id_sub_mapel,
+            title: dataSubMapel.sub_mapel,
+            description: dataSubMapel.deskripsi,
+            lessons: dataSubMapel.lessons,
+            members: dataSubMapel.members,
+            date: dataSubMapel.date,
+            level: dataSubMapel.level,
+            instructor: dataSubMapel.instructor,
+            rating: parseFloat(dataSubMapel.rating),
+            reviews: dataSubMapel.reviews,
+            workingHours: datajadwalmapel,
+            // Jika ingin menambahkan data lain, bisa disesuaikan
+            popularCourses: [
+              { id: 1, title: 'Fisika Kelas 12', members: 'Members only', rating: 4 },
+              { id: 2, title: 'Fisika UTBK', members: 'Members only', rating: 5 }
+            ],
+          });
+
+       
+        }
+      });
   }, [id]);
 
-  if (!course) {
+  if (!course || !mapelData) {
     return (
       <div className="course-detail-loading">
         <div className="container">
@@ -211,9 +82,9 @@ const CourseDetail = () => {
       <div className="container">
         {/* Breadcrumb */}
         <div className="breadcrumb">
-          <span>{course.category}</span>
+          <span>{mapelData.mapel}</span>
           <span className="separator">›</span>
-          <span>{course.subcategory}</span>
+          <span>{course.title}</span>
         </div>
 
         <div className="course-detail-content">
@@ -222,7 +93,7 @@ const CourseDetail = () => {
             <div className="col-lg-8">
               <div className="course-header">
                 <h1 className="course-title">{course.title}</h1>
-                
+
                 <div className="course-meta">
                   <div className="instructor-info">
                     <div className="instructor-avatar">
@@ -230,10 +101,12 @@ const CourseDetail = () => {
                     </div>
                     <div className="instructor-details">
                       <span className="instructor-label">Instructor</span>
-                      <span className="instructor-name">{course.instructor}</span>
+                      <span className="instructor-name">
+                        {course.name || 'N/A'}
+                      </span>
                     </div>
                   </div>
-                  
+
                   <div className="course-rating">
                     <div className="stars">
                       {renderStars(course.rating)}
@@ -246,13 +119,13 @@ const CourseDetail = () => {
               {/* Tabs */}
               <div className="course-tabs">
                 <div className="tab-buttons">
-                  <button 
+                  <button
                     className={`tab-button ${activeTab === 'description' ? 'active' : ''}`}
                     onClick={() => setActiveTab('description')}
                   >
                     Description
                   </button>
-                  <button 
+                  <button
                     className={`tab-button ${activeTab === 'reviews' ? 'active' : ''}`}
                     onClick={() => setActiveTab('reviews')}
                   >
@@ -281,7 +154,7 @@ const CourseDetail = () => {
                 {/* Course Details Card */}
                 <div className="course-details-card">
                   <h3>Course details</h3>
-                  
+
                   <div className="detail-item">
                     <i className="fa fa-book"></i>
                     <div className="detail-content">
@@ -289,17 +162,17 @@ const CourseDetail = () => {
                       <span className="detail-value">{course.lessons}</span>
                     </div>
                   </div>
-                  
+
                   <div className="detail-item">
                     <i className="fa fa-signal"></i>
                     <div className="detail-content">
                       <span className="detail-label">Level</span>
-                      <span className="detail-value">{course.level}</span>
+                      <span className="detail-value">{course.level || 'N/A'}</span>
                     </div>
                   </div>
 
                   <div className="course-actions">
-                    <button 
+                    <button
                       className="btn-start-course"
                       onClick={() => navigate(`/course/${course.id}/learn`)}
                     >
@@ -340,32 +213,13 @@ const CourseDetail = () => {
                   ))}
                 </div>
 
-                {/* Popular Courses Section */}
-                <div className="popular-courses-section">
-                  <h3>Popular Courses</h3>
-                  {course.popularCourses.map((popularCourse, index) => (
-                    <div key={`section-${index}`} className="popular-course-section-item">
-                      <div className="popular-course-section-image">
-                        <img src="/assets/images/portfolio-01.jpg" alt={popularCourse.title} />
-                      </div>
-                      <div className="popular-course-section-info">
-                        <h4>{popularCourse.title}</h4>
-                        <div className="popular-course-section-meta">
-                          <span className="crown-icon">👑</span>
-                          <span className="members-text">{popularCourse.members}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
                 {/* Working Hours */}
                 <div className="working-hours-card">
                   <h3>WORKING HOURS</h3>
                   <div className="working-hours-list">
                     <div className="working-hour-item">
                       <span className="day">Monday</span>
-                      <span className="time">{course.workingHours.monday}</span>
+                      <span className="time">{course.workingHours?.monday}</span>
                     </div>
                     <div className="working-hour-item">
                       <span className="day">Tuesday</span>
@@ -393,6 +247,7 @@ const CourseDetail = () => {
                     </div>
                   </div>
                 </div>
+
 
                 {/* Cart Section */}
                 <div className="cart-section">

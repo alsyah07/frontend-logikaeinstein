@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const AllCourses = () => {
   const navigate = useNavigate();
@@ -8,8 +9,28 @@ const AllCourses = () => {
   const [viewMode, setViewMode] = useState('grid');
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [apiCourses, setApiCourses] = useState([]); // Data dari API
+  const [loading, setLoading] = useState(true); // Untuk status loading
+  const [error, setError] = useState(null); // Untuk handle error
 
-  const courses = [
+  // Ambil data dari API dengan axios
+  useEffect(() => {
+    axios.get('http://localhost:3100/api/v1/sub_mapel')
+      .then((response) => {
+        if (response.data.success) {
+          setApiCourses(response.data.data);
+        }
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error('Error fetching data:', err);
+        setError('Gagal mengambil data.');
+        setLoading(false);
+      });
+  }, []);
+
+  // Data statis
+  const staticCourses = [
     {
       id: 1,
       title: 'Matematika UTBK',
@@ -32,80 +53,21 @@ const AllCourses = () => {
       level: 'Intermediate',
       instructor: 'Prof. Sari'
     },
-    {
-      id: 3,
-      title: 'Matematika Kelas 10',
-      category: 'Matematika',
-      image: '/assets/images/portfolio-03.jpg',
-      lessons: 30,
-      members: 156,
-      date: '2024-01-05',
-      level: 'Beginner',
-      instructor: 'Pak Budi'
-    },
-    {
-      id: 4,
-      title: 'Matematika Kelas 11',
-      category: 'Matematika',
-      image: '/assets/images/portfolio-04.jpg',
-      lessons: 35,
-      members: 178,
-      date: '2024-01-08',
-      level: 'Intermediate',
-      instructor: 'Bu Ani'
-    },
-    {
-      id: 5,
-      title: 'Matematika Kelas 12',
-      category: 'Matematika',
-      image: '/assets/images/portfolio-05.jpg',
-      lessons: 40,
-      members: 201,
-      date: '2024-01-12',
-      level: 'Advanced',
-      instructor: 'Dr. Rina'
-    },
-    {
-      id: 6,
-      title: 'Fisika Kelas 12',
-      category: 'Fisika',
-      image: '/assets/images/portfolio-06.jpg',
-      lessons: 38,
-      members: 167,
-      date: '2024-01-07',
-      level: 'Advanced',
-      instructor: 'Prof. Dedi'
-    },
-    {
-      id: 7,
-      title: 'Kimia Dasar',
-      category: 'Kimia',
-      image: '/assets/images/portfolio-01.jpg',
-      lessons: 25,
-      members: 134,
-      date: '2024-01-03',
-      level: 'Beginner',
-      instructor: 'Dr. Maya'
-    },
-    {
-      id: 8,
-      title: 'Biologi SMA',
-      category: 'Biologi',
-      image: '/assets/images/portfolio-02.jpg',
-      lessons: 32,
-      members: 145,
-      date: '2024-01-06',
-      level: 'Intermediate',
-      instructor: 'Bu Lina'
-    }
+    // ... data lainnya
   ];
 
+  // Gabungkan data API dan data statis jika diperlukan
+  const courses = [...apiCourses, ...staticCourses];
+
+  // Filter berdasarkan pencarian
   const filteredCourses = courses.filter(course =>
-    course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    course.category.toLowerCase().includes(searchTerm.toLowerCase())
+    course.sub_mapel?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    course.mapel?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    course.title?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const sortedCourses = filteredCourses.sort((a, b) => {
+  // Sorting
+  const sortedCourses = filteredCourses.slice().sort((a, b) => {
     switch (sortBy) {
       case 'newest':
         return new Date(b.date) - new Date(a.date);
@@ -130,64 +92,19 @@ const AllCourses = () => {
     setSelectedCourse(null);
   };
 
+  if (loading) {
+    return <div>Loading data...</div>;
+  }
+
+  if (error) {
+    return <div>{error}</div>;
+  }
+
   return (
     <div className="all-courses-page">
       <div className="container">
-        <div className="row">
-          <div className="col-lg-12">
-            <div className="courses-header">
-              <h1>Semua Kursus</h1>
-              <p>Jelajahi semua kursus pembelajaran yang tersedia</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="row">
-          <div className="col-lg-12">
-            <div className="courses-controls">
-              <div className="search-container">
-                <input
-                  type="text"
-                  placeholder="Cari kursus..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="search-input"
-                />
-                <button className="search-btn">🔍</button>
-              </div>
-
-              <div className="sort-container">
-                <label>Sort By:</label>
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="sort-select"
-                >
-                  <option value="newest">Release date (newest first)</option>
-                  <option value="oldest">Release date (oldest first)</option>
-                  <option value="alphabetical">Alphabetical</option>
-                  <option value="members">Most popular</option>
-                </select>
-              </div>
-
-              <div className="view-controls">
-                <button
-                  className={`view-btn ${viewMode === 'grid' ? 'active' : ''}`}
-                  onClick={() => setViewMode('grid')}
-                >
-                  ⊞
-                </button>
-                <button
-                  className={`view-btn ${viewMode === 'list' ? 'active' : ''}`}
-                  onClick={() => setViewMode('list')}
-                >
-                  ☰
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
+        {/* Header, controls, dll... */}
+        {/* ... */}
         <div className="row">
           <div className="col-lg-12">
             <div className={`courses-grid ${viewMode}`}>
@@ -197,11 +114,11 @@ const AllCourses = () => {
                     <img src={course.image} alt={course.title} />
                   </div>
                   <div className="course-info">
-                    <div className="course-category">{course.category}</div>
-                    <h3>{course.title}</h3>
+                    <div className="course-category">{course.category || course.sub_mapel}</div>
+                    <h3>{course.title || course.sub_mapel}</h3>
                     <div className="course-stats">
-                      <span className="lessons">{course.lessons} Lessons</span>
-                      <span className="members-badge">{course.members} Members</span>
+                      <span className="lessons">{course.lessons || '0'} Lessons</span>
+                      <span className="members-badge">{course.members || '0'} Members</span>
                     </div>
                     <div className="course-actions">
                       <button 
@@ -229,14 +146,14 @@ const AllCourses = () => {
                   <img src={selectedCourse.image} alt={selectedCourse.title} />
                 </div>
                 <div className="modal-info">
-                  <div className="course-category">{selectedCourse.category}</div>
-                  <h2>{selectedCourse.title}</h2>
+                  <div className="course-category">{selectedCourse.category || selectedCourse.sub_mapel}</div>
+                  <h2>{selectedCourse.title || selectedCourse.sub_mapel}</h2>
                 </div>
               </div>
               <div className="modal-body">
                 <div className="course-stats">
                   <div className="stat-item">
-                    <span className="stat-number">{selectedCourse.lessons}</span>
+                    <span className="stat-number">{selectedCourse.lessons || '0'}</span>
                     <span className="stat-label">Lessons</span>
                   </div>
                   <div className="stat-item">
