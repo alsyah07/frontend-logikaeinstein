@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
@@ -14,101 +14,54 @@ const Portfolio = ({ onShowAllClick }) => {
 
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-  // Function to generate thumbnail from video
-  const generateVideoThumbnail = (videoUrl) => {
-    return new Promise((resolve, reject) => {
-      const video = document.createElement('video');
-      video.crossOrigin = 'anonymous';
-      video.src = videoUrl;
-      video.currentTime = 1; // Capture at 1 second
-
-      video.addEventListener('loadeddata', () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        
-        const thumbnail = canvas.toDataURL('image/jpeg');
-        resolve(thumbnail);
-      });
-
-      video.addEventListener('error', () => {
-        reject(new Error('Failed to load video'));
-      });
-    });
-  };
-
-  // Function to get Google Drive thumbnail
-  const getGoogleDriveThumbnail = (driveUrl) => {
-    // Extract file ID from various Google Drive URL formats
+  // Function to get Google Drive embed URL for iframe
+  const getGoogleDriveEmbedUrl = (driveUrl) => {
     let fileId = null;
     
-    // Format 1: /file/d/FILE_ID/preview
-    const previewMatch = driveUrl.match(/\/file\/d\/([^\/]+)\/preview/);
-    if (previewMatch) {
-      fileId = previewMatch[1];
-    }
+    const patterns = [
+      /\/file\/d\/([^\/]+)/,
+      /[?&]id=([^&]+)/,
+      /\/open\?id=([^&]+)/
+    ];
     
-    // Format 2: /file/d/FILE_ID/view
-    const viewMatch = driveUrl.match(/\/file\/d\/([^\/]+)\/view/);
-    if (viewMatch) {
-      fileId = viewMatch[1];
-    }
-    
-    // Format 3: ?id=FILE_ID
-    const idMatch = driveUrl.match(/[?&]id=([^&]+)/);
-    if (idMatch) {
-      fileId = idMatch[1];
-    }
-    
-    // Format 4: /open?id=FILE_ID
-    const openMatch = driveUrl.match(/\/open\?id=([^&]+)/);
-    if (openMatch) {
-      fileId = openMatch[1];
+    for (const pattern of patterns) {
+      const match = driveUrl.match(pattern);
+      if (match) {
+        fileId = match[1];
+        break;
+      }
     }
     
     if (fileId) {
-      // Return Google Drive thumbnail URL
-      return `https://drive.google.com/thumbnail?id=${fileId}&sz=w400-h300`;
+      return `https://drive.google.com/file/d/${fileId}/preview`;
     }
     
     return null;
   };
 
-  // Function to get image/thumbnail URL
-  const getImageUrl = (course) => {
-    // Priority 1: If video URL exists in video_mapel, extract thumbnail
-    if (course.video_url) {
-      // Check if Google Drive video
-      if (course.video_url.includes('drive.google.com')) {
-        const driveThumbnail = getGoogleDriveThumbnail(course.video_url);
-        if (driveThumbnail) return driveThumbnail;
-      }
+  // Function to get thumbnail/preview URL
+  const getThumbnailUrl = (course) => {
+    // Untuk Google Drive, pakai thumbnail API
+    if (course.video_url && course.video_url.includes('drive.google.com')) {
+      const patterns = [
+        /\/file\/d\/([^\/]+)/,
+        /[?&]id=([^&]+)/,
+      ];
       
-      // Check if Vimeo video
-      const vimeoMatch = course.video_url.match(/vimeo\.com\/(\d+)/);
-      if (vimeoMatch) {
-        return `https://vumbnail.com/${vimeoMatch[1]}.jpg`;
-      }
-      
-      // If direct video file (.mp4, .webm, etc)
-      if (course.video_url.match(/\.(mp4|webm|ogg)$/i)) {
-        return course.video_url;
+      for (const pattern of patterns) {
+        const match = course.video_url.match(pattern);
+        if (match) {
+          const fileId = match[1];
+          return `https://drive.google.com/thumbnail?id=${fileId}&sz=w400`;
+        }
       }
     }
     
-    // Priority 2: If banner field exists in API (fallback)
-    if (course.banner) {
-      return `${API_BASE_URL.replace('/api/v1', '')}/uploads/${course.banner}`;
-    }
-    
-    // Priority 3: Generate from title
-    return `/assets/images/${course.sub_mapel.toLowerCase().replace(/\s+/g, '-')}.jpg`;
+    // Fallback
+    return '/assets/images/default-course.jpg';
   };
 
-  // Fetch categories (mapel)
+  // Fetch categories
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -122,15 +75,14 @@ const Portfolio = ({ onShowAllClick }) => {
     };
 
     fetchCategories();
-  }, []);
+  }, [API_BASE_URL]);
 
-  // Fetch courses (sub_mapel)
+  // Fetch courses
   useEffect(() => {
     const fetchCourses = async () => {
       try {
         const response = await axios.get(`${API_BASE_URL}/sub_mapel`);
         if (response.data.success) {
-          // Transform API data and fetch video details for each course
           const transformedCourses = await Promise.all(
             response.data.data
               .filter(course => course.status === 1)
@@ -138,36 +90,26 @@ const Portfolio = ({ onShowAllClick }) => {
                 let videoUrl = null;
                 let videoCount = 0;
 
-                // Fetch video details for this sub_mapel
                 try {
                   const videoResponse = await axios.get(
                     `${API_BASE_URL}/detail_video_mapel/sub_mapel/${course.id_sub_mapel}`
                   );
                   
-                  // Check if response is array and has data
                   if (Array.isArray(videoResponse.data) && videoResponse.data.length > 0) {
-                    // Filter only active videos (status = 1)
                     const activeVideos = videoResponse.data.filter(v => v.status === 1);
                     videoCount = activeVideos.length;
                     
                     if (activeVideos.length > 0) {
-                      // Get first active video
-                      const firstVideo = activeVideos[0];
-                      videoUrl = firstVideo.video_mapel; // Ambil video_mapel untuk banner
-                      
-                      console.log(`Course: ${course.sub_mapel}`);
-                      console.log(`- Video URL: ${videoUrl}`);
-                      console.log(`- Total videos: ${videoCount}`);
+                      videoUrl = activeVideos[0].video_mapel;
                     }
                   }
                 } catch (error) {
-                  console.error(`Error fetching video for sub_mapel ${course.id_sub_mapel}:`, error.message);
+                  console.error(`Error fetching video:`, error.message);
                 }
 
-                // Build course object with video_url for banner extraction
                 const courseObj = {
                   ...course,
-                  video_url: videoUrl // Gunakan video_mapel sebagai sumber banner
+                  video_url: videoUrl
                 };
 
                 return {
@@ -177,8 +119,9 @@ const Portfolio = ({ onShowAllClick }) => {
                   categoryName: course.mapel,
                   title: course.sub_mapel,
                   video_url: videoUrl,
+                  embedUrl: videoUrl ? getGoogleDriveEmbedUrl(videoUrl) : null,
                   videoCount: videoCount,
-                  image: getImageUrl(courseObj) // Generate banner dari video_mapel
+                  thumbnail: getThumbnailUrl(courseObj)
                 };
               })
           );
@@ -193,13 +136,15 @@ const Portfolio = ({ onShowAllClick }) => {
     };
 
     fetchCourses();
-  }, []);
+  }, [API_BASE_URL]);
 
-  const filteredCourses = activeFilter === '*' 
-    ? courses 
-    : courses.filter(course => course.category === activeFilter);
+  const filteredCourses = useMemo(() => {
+    return activeFilter === '*' 
+      ? courses 
+      : courses.filter(course => course.category === activeFilter);
+  }, [activeFilter, courses]);
 
-  const handleFilterClick = (filter) => {
+  const handleFilterClick = useCallback((filter) => {
     if (filter !== activeFilter) {
       setIsAnimating(true);
       setTimeout(() => {
@@ -207,17 +152,17 @@ const Portfolio = ({ onShowAllClick }) => {
         setTimeout(() => setIsAnimating(false), 50);
       }, 300);
     }
-  };
+  }, [activeFilter]);
 
-  const handleCourseClick = (course) => {
+  const handleCourseClick = useCallback((course) => {
     setSelectedCourse(course);
     setShowModal(true);
-  };
+  }, []);
 
-  const closeModal = () => {
+  const closeModal = useCallback(() => {
     setShowModal(false);
     setSelectedCourse(null);
-  };
+  }, []);
 
   if (loading) {
     return (
@@ -286,16 +231,57 @@ const Portfolio = ({ onShowAllClick }) => {
                 }}
               >
                 <div className="course-card" onClick={() => handleCourseClick(course)}>
-                  <div className="course-image">
-                    <img 
-                      src={course.banner} 
-                      alt={course.title}
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        // Final fallback
-                        e.target.src = '/assets/images/default-course.jpg';
-                      }}
-                    />
+                  <div className="course-image" style={{ position: 'relative', paddingTop: '56.25%', overflow: 'hidden', backgroundColor: '#f8f9fa' }}>
+                    {course.embedUrl ? (
+                      <iframe
+                        src={course.embedUrl}
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          width: '100%',
+                          height: '100%',
+                          border: 'none',
+                          pointerEvents: 'none'
+                        }}
+                        allow="autoplay"
+                      />
+                    ) : course.videoCount === 0 ? (
+                      <div style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: '#e9ecef',
+                        color: '#6c757d'
+                      }}>
+                        <i className="bi bi-camera-video-off" style={{ fontSize: '3rem', marginBottom: '0.5rem' }}></i>
+                        <p style={{ margin: 0, fontSize: '0.9rem' }}>No videos available</p>
+                      </div>
+                    ) : (
+                      <img 
+                        src={course.thumbnail} 
+                        alt={course.title}
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover'
+                        }}
+                        loading="lazy"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = '/assets/images/default-course.jpg';
+                        }}
+                      />
+                    )}
                   </div>
                   <div className="course-content">
                     <span className="course-category">
@@ -354,17 +340,19 @@ const Portfolio = ({ onShowAllClick }) => {
                 </div>
                 <div className="stat-item">
                   <span className="stat-icon">📚</span>
-                  <span className="stat-text">50 Lectures</span>
+                  <span className="stat-text">{selectedCourse.videoCount} Lectures</span>
                 </div>
               </div>
               <div className="modal-actions">
                 <button 
-                  className="btn-preview"
-                  onClick={() => navigate(`/course/${selectedCourse.id}`)}
-                >
-                  PREVIEW THIS COURSE
-                  <div className="course-label">{selectedCourse.title}</div>
-                </button>
+  className="btn-preview"
+  onClick={() => navigate(`/course/${selectedCourse.id}`)}
+>
+  PREVIEW THIS COURSE
+  <div className="course-label" style={{ marginLeft: '12px' }}>
+    {selectedCourse.title}
+  </div>
+</button>
                 <button className="btn-wishlist">
                   <span className="heart-icon">♡</span>
                   Add to Wishlist
