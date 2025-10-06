@@ -12,6 +12,13 @@ const CourseDetail = () => {
   const [mapelData, setMapelData] = useState(null);
 
   useEffect(() => {
+
+    let ceklogin = localStorage.getItem('user');
+    console.log('cekdatausers',JSON.parse(ceklogin))
+    // if (!ceklogin) {
+    //   navigate('/login');
+    //   return;
+    // }
     // Fetch data dari API
     fetch(`http://localhost:3100/api/v1/sub_mapel/${id}`)
       .then(res => res.json())
