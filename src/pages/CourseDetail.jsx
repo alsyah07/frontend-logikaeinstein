@@ -7,18 +7,18 @@ const CourseDetail = () => {
   const navigate = useNavigate();
   const [course, setCourse] = useState(null);
   const [activeTab, setActiveTab] = useState('description');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   // State untuk data mapel dan mapel detail
   const [mapelData, setMapelData] = useState(null);
 
   useEffect(() => {
-
     let ceklogin = localStorage.getItem('user');
-    console.log('cekdatausers',JSON.parse(ceklogin))
-    // if (!ceklogin) {
-    //   navigate('/login');
-    //   return;
-    // }
+    console.log('cekdatausers', JSON.parse(ceklogin));
+    
+    // Cek status login
+    setIsLoggedIn(!!ceklogin);
+
     // Fetch data dari API
     fetch(`http://localhost:3100/api/v1/sub_mapel/${id}`)
       .then(res => res.json())
@@ -35,7 +35,7 @@ const CourseDetail = () => {
                 setMapelData(resMapel.data);
               }
             });
-               console.log(datajadwalmapel);
+          console.log(datajadwalmapel);
 
           // Set data course
           setCourse({
@@ -51,17 +51,23 @@ const CourseDetail = () => {
             rating: parseFloat(dataSubMapel.rating),
             reviews: dataSubMapel.reviews,
             workingHours: datajadwalmapel,
-            // Jika ingin menambahkan data lain, bisa disesuaikan
             popularCourses: [
               { id: 1, title: 'Fisika Kelas 12', members: 'Members only', rating: 4 },
               { id: 2, title: 'Fisika UTBK', members: 'Members only', rating: 5 }
             ],
           });
-
-       
         }
       });
   }, [id]);
+
+  const handleStartCourse = () => {
+  if (!isLoggedIn) {
+    navigate('/login');
+    return;
+  }
+  navigate(`/course/${course.id}/learn`);
+};
+
 
   if (!course || !mapelData) {
     return (
@@ -146,11 +152,24 @@ const CourseDetail = () => {
                       <p>{course.description}</p>
                     </div>
                   )}
-                  {activeTab === 'reviews' && (
-                    <div className="reviews-content">
-                      <p>Belum ada review untuk kursus ini.</p>
-                    </div>
-                  )}
+{activeTab === 'reviews' && (
+  <div className="reviews-content">
+    <p>Belum ada review untuk kursus ini.</p>
+    {!isLoggedIn && (
+      <p>
+        <span
+          style={{ color: 'blue', cursor: 'pointer', textDecoration: 'underline' }}
+          onClick={() => navigate('/login')}
+        >
+          Login
+        </span>{' '}
+        untuk memulai course.
+      </p>
+    )}
+  </div>
+)}
+
+
                 </div>
               </div>
             </div>
@@ -181,9 +200,9 @@ const CourseDetail = () => {
                   <div className="course-actions">
                     <button
                       className="btn-start-course"
-                      onClick={() => navigate(`/course/${course.id}/learn`)}
+                      onClick={handleStartCourse}
                     >
-                      START COURSE
+                      {isLoggedIn ? 'START COURSE' : 'LOGIN TO START COURSE'}
                     </button>
                     <div className="action-buttons">
                       <button className="btn-wishlist">
@@ -254,7 +273,6 @@ const CourseDetail = () => {
                     </div>
                   </div>
                 </div>
-
 
                 {/* Cart Section */}
                 <div className="cart-section">
