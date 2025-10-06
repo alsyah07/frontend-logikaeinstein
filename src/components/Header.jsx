@@ -1,724 +1,518 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import NavigationMenu from './NavigationMenu';
+import React, { useState, useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
+import axios from "axios";
+import NavigationMenu from "./NavigationMenu";
 
 const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('CATEGORY');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("ALL CATEGORIES");
+  const [selectedCategoryId, setSelectedCategoryId] = useState(null);
   const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
+  const [expandedCategory, setExpandedCategory] = useState(null);
+  const [categories, setCategories] = useState([]);
+  const [subCategories, setSubCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const categoryRef = useRef(null);
 
-  const categories = {
-    'FISIKA': [
-      'Fisika Dasar',
-      'Fisika Kelas 10',
-      'Fisika Kelas 11',
-      'Fisika Kelas 7',
-      'Fisika Kelas 8',
-      'Fisika Kelas 9',
-      'Fisika UTBK'
-    ],
-    'MATEMATIKA': [
-      'Matematika Dasar',
-      'Matematika Kelas 10',
-      'Matematika Kelas 11',
-      'Matematika Kelas 12',
-      'Matematika UTBK'
-    ]
-  };
+  // Base URL untuk API
+  const API_BASE_URL = 'http://localhost:3100/api/v1';
 
-  // Tutup menu jika klik item
-  const handleMenuItemClick = () => {
-    setMenuOpen(false);
-  };
+  // Fetch categories (mapel) from API
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await axios.get(`${API_BASE_URL}/mapel`);
+        if (response.data.success) {
+          setCategories(response.data.data);
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      }
+    };
 
-  // Handle search
+    fetchCategories();
+  }, []);
+
+  // Fetch sub categories (sub_mapel) from API
+  useEffect(() => {
+    const fetchSubCategories = async () => {
+      try {
+        const response = await axios.get(`${API_BASE_URL}/sub_mapel`);
+        if (response.data.success) {
+          setSubCategories(response.data.data);
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('Error fetching sub categories:', error);
+        setLoading(false);
+      }
+    };
+
+    fetchSubCategories();
+  }, []);
+
+  // Group sub categories by mapel
+  const groupedCategories = categories.reduce((acc, mapel) => {
+    acc[mapel.mapel] = subCategories.filter(
+      sub => sub.id_mapel === mapel.id_mapel && sub.status === 1
+    );
+    return acc;
+  }, {});
+
   const handleSearch = (e) => {
     e.preventDefault();
-    console.log('Searching for:', searchQuery, 'in category:', selectedCategory);
-    // Implementasi search logic di sini
+    console.log("Searching:", searchQuery, "in category:", selectedCategory, "ID:", selectedCategoryId);
   };
 
-  // Handle category selection
-  const handleCategorySelect = (category) => {
-    setSelectedCategory(category);
+  const handleCategorySelect = (subMapel) => {
+    setSelectedCategory(subMapel.sub_mapel);
+    setSelectedCategoryId(subMapel.id_sub_mapel);
     setCategoryDropdownOpen(false);
+    setExpandedCategory(null);
   };
 
-  // Tutup menu otomatis saat resize ke desktop
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth > 991 && menuOpen) {
-        setMenuOpen(false);
-      }
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [menuOpen]);
+  const handleResetCategory = () => {
+    setSelectedCategory("ALL CATEGORIES");
+    setSelectedCategoryId(null);
+    setCategoryDropdownOpen(false);
+    setExpandedCategory(null);
+  };
 
-  // Close dropdowns when clicking outside
+  const toggleMainCategory = (mainCategory) => {
+    setExpandedCategory(expandedCategory === mainCategory ? null : mainCategory);
+  };
+
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (!event.target.closest('.category-dropdown')) {
+      if (categoryRef.current && !categoryRef.current.contains(event.target)) {
         setCategoryDropdownOpen(false);
+        setExpandedCategory(null);
       }
     };
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   return (
-    <header className="modern-header">
-      <div className="header-container">
-        {/* Logo */}
-        <div className="logo-section">
-          <Link to="/" className="logo-link" onClick={handleMenuItemClick}>
-            <div className="logo-content">
-              <img src="/assets/images/logo-icon.png" alt="Logo" className="logo-icon" />
-              <span className="logo-text">Logika Einstein</span>
-            </div>
-          </Link>
-        </div>
-
-        {/* Search Section */}
-        <div className="search-section">
-          <form onSubmit={handleSearch} className="search-form">
-            {/* Category Dropdown */}
-            <div className="category-dropdown">
-              <button
-                type="button"
-                className="category-button"
-                onClick={() => setCategoryDropdownOpen(!categoryDropdownOpen)}
-              >
-                {selectedCategory}
-                <svg className="dropdown-arrow" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                </svg>
-              </button>
-              {categoryDropdownOpen && (
-                <div className="category-dropdown-menu">
-                  {Object.entries(categories).map(([mainCategory, subCategories]) => (
-                    <div key={mainCategory} className="category-group">
-                      <div className="category-header">{mainCategory}</div>
-                      {subCategories.map((subCategory) => (
-                        <button
-                          key={subCategory}
-                          type="button"
-                          className="category-option"
-                          onClick={() => handleCategorySelect(subCategory)}
-                        >
-                          {subCategory}
-                        </button>
-                      ))}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Search Input */}
-            <div className="search-input-container">
-              <input
-                type="text"
-                placeholder="Search courses"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="search-input"
-              />
-              <button type="submit" className="search-button">
-                <svg className="search-icon" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
-                </svg>
-              </button>
-            </div>
-          </form>
-        </div>
-
-        {/* Navigation Menu */}
-        <div className="nav-section">
-          <nav className="main-navigation">
-            <NavigationMenu onMenuItemClick={handleMenuItemClick} />
-          </nav>
-
-          {/* Mobile Menu Toggle */}
-          <button
-            className={`mobile-menu-toggle ${menuOpen ? 'active' : ''}`}
-            onClick={() => setMenuOpen(!menuOpen)}
-            aria-label="Toggle menu"
-          >
-            <span></span>
-            <span></span>
-            <span></span>
-          </button>
-        </div>
-      </div>
-
-      {/* Mobile Menu */}
-      {menuOpen && (
-        <div className="mobile-menu">
-          <div className="mobile-search">
-            <form onSubmit={handleSearch}>
-              <select 
-                value={selectedCategory} 
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="mobile-category-select"
-              >
-                <option value="CATEGORY">CATEGORY</option>
-                {Object.entries(categories).map(([mainCategory, subCategories]) => (
-                  <optgroup key={mainCategory} label={mainCategory}>
-                    {subCategories.map((subCategory) => (
-                      <option key={subCategory} value={subCategory}>{subCategory}</option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
-              <div className="mobile-search-input">
-                <input
-                  type="text"
-                  placeholder="Search courses"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                <button type="submit">
-                  <svg viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
-                  </svg>
-                </button>
-              </div>
-            </form>
-          </div>
-          <NavigationMenu onMenuItemClick={handleMenuItemClick} />
-        </div>
-      )}
-
-      {/* Overlay Mobile */}
-      {menuOpen && (
-        <div
-          className="mobile-overlay"
-          onClick={() => setMenuOpen(false)}
-        />
-      )}
-
-      {/* Modern Header Styling */}
+    <>
       <style>{`
-        .modern-header {
-          background: #fff;
-          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        .header-wrapper {
+          background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+          border-bottom: 1px solid rgba(0, 0, 0, 0.05);
           position: fixed;
           top: 0;
           left: 0;
           right: 0;
           z-index: 1000;
-          height: 70px;
+          backdrop-filter: blur(10px);
         }
 
-        .header-container {
-          max-width: 1200px;
-          margin: 0 auto;
-          padding: 0 20px;
-          height: 100%;
+        .header-wrapper .container {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 1.5rem;
+          padding: 0.65rem 1rem;
+        }
+
+        .logo-link {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          text-decoration: none;
+          transition: transform 0.2s ease;
+        }
+        .logo-link:hover {
+          transform: translateY(-2px);
+        }
+
+        .logo-icon {
+          height: 44px;
+          transition: transform 0.3s ease;
+        }
+        .logo-link:hover .logo-icon {
+          transform: rotate(5deg);
+        }
+
+        .logo-text {
+          font-weight: 700;
+          font-size: 1.25rem;
+          background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+        }
+
+        .search-form {
+          flex-grow: 1;
+          max-width: 720px;
+          margin: 0 1.5rem;
+        }
+        .input-group {
+          height: 44px;
+        }
+        .category-button {
+          min-width: 160px;
+          border: 1px solid #dee2e6;
+          background: white;
+          color: #495057;
+          font-weight: 500;
+          font-size: 0.875rem;
+          padding: 0.625rem 1rem;
+          border-radius: 8px 0 0 8px;
+          transition: all 0.2s ease;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .category-button:hover {
+          background: #f8f9fa;
+          border-color: #adb5bd;
+        }
+
+        .category-dropdown {
+          position: absolute;
+          top: 100%;
+          left: 0;
+          margin-top: 0.5rem;
+          background: white;
+          border: 1px solid #dee2e6;
+          border-radius: 12px;
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+          max-height: 450px;
+          overflow-y: auto;
+          width: 280px;
+          z-index: 1000;
+          animation: dropdownSlide 0.2s ease;
+        }
+        @keyframes dropdownSlide {
+          from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        .dropdown-item-custom {
+          padding: 0.625rem 1.25rem;
+          color: #495057;
+          transition: all 0.15s ease;
+          border: none;
+          background: none;
+          width: 100%;
+          text-align: left;
+          font-size: 0.9rem;
+          cursor: pointer;
           display: flex;
           align-items: center;
           justify-content: space-between;
         }
-
-        /* Logo Section */
-        .logo-section {
-          flex-shrink: 0;
+        .dropdown-item-custom:hover {
+          background: #f1f3f5;
+          color: #0d6efd;
+          padding-left: 1.5rem;
         }
-
-        .logo-link {
-          text-decoration: none;
-        }
-
-        .logo-content {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-
-        .logo-icon {
-          width: 32px;
-          height: 32px;
-        }
-
-        .logo-text {
-          font-size: 20px;
-          font-weight: 700;
-          color: #2563eb;
-        }
-
-        /* Search Section */
-        .search-section {
-          flex: 1;
-          max-width: 600px;
-          margin: 0 40px;
-        }
-
-        .search-form {
-          display: flex;
-          background: #f8fafc;
-          border: 1px solid #e2e8f0;
-          border-radius: 8px;
-          overflow: hidden;
-        }
-
-        .category-dropdown {
-          position: relative;
-        }
-
-        .category-button {
-          background: none;
-          border: none;
-          padding: 12px 16px;
-          font-size: 14px;
+        .dropdown-item-custom.active {
+          background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+          color: white;
           font-weight: 500;
-          color: #64748b;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          border-right: 1px solid #e2e8f0;
-          white-space: nowrap;
         }
 
-        .dropdown-arrow {
-          width: 16px;
-          height: 16px;
-        }
-
-        .category-dropdown-menu {
-          position: absolute;
-          top: 100%;
-          left: 0;
-          background: white;
-          border: 1px solid #e2e8f0;
-          border-radius: 8px;
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-          z-index: 1001;
-          min-width: 200px;
-          max-height: 400px;
-          overflow-y: auto;
-        }
-
-        .category-group {
-          border-bottom: 1px solid #e2e8f0;
-        }
-
-        .category-group:last-child {
-          border-bottom: none;
-        }
-
-        .category-header {
-          padding: 12px 16px 8px 16px;
-          font-size: 12px;
-          font-weight: 600;
-          color: #6b7280;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-          background: #f9fafb;
-          border-bottom: 1px solid #e5e7eb;
-        }
-
-        .category-option {
-          display: block;
-          width: 100%;
-          padding: 10px 16px 10px 24px;
-          text-align: left;
-          background: none;
+        .main-category-item {
+          padding: 0.75rem 1.25rem;
+          color: #212529;
+          transition: all 0.15s ease;
           border: none;
-          font-size: 14px;
-          color: #374151;
+          background: none;
+          width: 100%;
+          text-align: left;
+          font-size: 0.95rem;
+          font-weight: 600;
           cursor: pointer;
-          transition: background-color 0.2s;
-        }
-
-        .category-option:hover {
-          background: #f3f4f6;
-        }
-
-        .search-input-container {
-          flex: 1;
           display: flex;
           align-items: center;
+          justify-content: space-between;
+        }
+        .main-category-item:hover {
+          background: #e9ecef;
+          color: #0d6efd;
+        }
+        .main-category-item i {
+          transition: transform 0.2s ease;
+        }
+        .main-category-item.expanded i {
+          transform: rotate(180deg);
+        }
+
+        .submenu-container {
+          max-height: 0;
+          overflow: hidden;
+          transition: max-height 0.3s ease;
+          background: #f8f9fa;
+        }
+        .submenu-container.expanded {
+          max-height: 500px;
+        }
+
+        .submenu-item {
+          padding: 0.5rem 1.25rem 0.5rem 2.5rem;
+          color: #495057;
+          transition: all 0.15s ease;
+          border: none;
+          background: none;
+          width: 100%;
+          text-align: left;
+          font-size: 0.875rem;
+          cursor: pointer;
+        }
+        .submenu-item:hover {
+          background: #e9ecef;
+          color: #0d6efd;
+          padding-left: 2.75rem;
+        }
+        .submenu-item.active {
+          background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+          color: white;
+          font-weight: 500;
         }
 
         .search-input {
-          flex: 1;
-          border: none;
-          background: none;
-          padding: 12px 16px;
-          font-size: 14px;
-          outline: none;
+          border: 1px solid #dee2e6;
+          border-left: none;
+          border-right: none;
+          padding: 0.625rem 1rem;
+          font-size: 0.95rem;
         }
-
-        .search-input::placeholder {
-          color: #9ca3af;
+        .search-input:focus {
+          border-color: #0d6efd;
+          box-shadow: none;
         }
 
         .search-button {
-          background: #3b82f6;
+          border-radius: 0 8px 8px 0;
+          padding: 0.625rem 1.25rem;
+          background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
           border: none;
-          padding: 12px 16px;
-          cursor: pointer;
-          transition: background-color 0.2s;
+          transition: all 0.2s ease;
         }
-
         .search-button:hover {
-          background: #2563eb;
+          background: linear-gradient(135deg, #0a58ca 0%, #084298 100%);
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
         }
 
-        .search-icon {
-          width: 20px;
-          height: 20px;
-          color: white;
-        }
-
-        /* Navigation Section */
-        .nav-section {
+        nav {
           display: flex;
           align-items: center;
-          gap: 20px;
+          gap: 1rem;
+        }
+        nav a, nav button {
+          margin-left: 0.75rem;
         }
 
-        .main-navigation {
-          display: flex;
-          align-items: center;
-        }
-
-        .nav {
-          display: flex;
-          list-style: none;
-          margin: 0;
-          padding: 0;
-          gap: 32px;
-          align-items: center;
-        }
-
-        .nav li {
-          position: relative;
-        }
-
-        .nav a {
-          text-decoration: none;
-          color: #000000;
-          font-weight: 500;
-          font-size: 14px;
-          transition: color 0.2s;
-          display: block;
-          padding: 8px 0;
-        }
-
-        .nav a:hover {
-          color: #3b82f6;
-        }
-
-        .nav a.active {
-          color: #3b82f6;
-        }
-
-        /* Dropdown Menu Styling */
-        .submenu .dropdown-menu {
-          position: absolute;
-          top: 100%;
-          left: 0;
+        .mobile-toggle {
+          border: 1px solid #dee2e6;
           background: white;
-          min-width: 250px;
-          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+          color: #495057;
+          padding: 0.5rem 0.75rem;
           border-radius: 8px;
-          padding: 20px 0;
-          opacity: 0;
-          visibility: hidden;
-          transform: translateY(-10px);
-          transition: all 0.3s ease;
-          z-index: 1000;
         }
-
-        .submenu:hover .dropdown-menu,
-        .submenu.active .dropdown-menu {
-          opacity: 1;
-          visibility: visible;
-          transform: translateY(0);
+        .mobile-toggle:hover {
+          background: #f8f9fa;
+          border-color: #0d6efd;
+          color: #0d6efd;
         }
-
-        .dropdown-menu li {
-          padding: 0;
-        }
-
-        .dropdown-menu a {
-          padding: 12px 25px;
-          color: #000000;
-          font-size: 14px;
-          border-bottom: none;
-        }
-
-        .dropdown-menu a:hover {
-          background: #f8fafc;
-          color: #3b82f6;
-        }
-
-        .category-header {
-          padding: 12px 25px;
-          font-weight: 700;
-          font-size: 12px;
-          color: #6b7280;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-          border-bottom: 1px solid #e5e7eb;
-          margin-bottom: 5px;
-        }
-
-        /* Login Button Styling */
-        .main-blue-button {
-          margin-left: 20px;
-        }
-
-        .main-blue-button a {
-          background: #3b82f6;
-          color: white;
-          font-weight: 600;
-          font-size: 14px;
-          padding: 10px 20px;
-          border-radius: 6px;
-          transition: background-color 0.2s;
-        }
-
-        .main-blue-button a:hover {
-          background: #2563eb;
-        }
-
-        /* Mobile Menu Toggle */
-        .mobile-menu-toggle {
-          display: none;
-          flex-direction: column;
-          background: none;
-          border: none;
-          cursor: pointer;
-          padding: 4px;
-          gap: 4px;
-        }
-
-        .mobile-menu-toggle span {
-          width: 24px;
-          height: 2px;
-          background: #374151;
-          transition: all 0.3s;
-        }
-
-        .mobile-menu-toggle.active span:nth-child(1) {
-          transform: rotate(45deg) translate(6px, 6px);
-        }
-
-        .mobile-menu-toggle.active span:nth-child(2) {
-          opacity: 0;
-        }
-
-        .mobile-menu-toggle.active span:nth-child(3) {
-          transform: rotate(-45deg) translate(6px, -6px);
-        }
-
-        /* Mobile Menu */
         .mobile-menu {
-          position: fixed;
-          top: 70px;
-          left: 0;
-          right: 0;
           background: white;
-          border-top: 1px solid #e2e8f0;
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-          padding: 20px;
-          z-index: 1000;
-          max-height: calc(100vh - 70px);
-          overflow-y: auto;
+          border-top: 1px solid #dee2e6;
+          padding: 1.5rem;
+          box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+          animation: slideDown 0.3s ease;
+        }
+        @keyframes slideDown {
+          from { opacity: 0; transform: translateY(-20px); }
+          to { opacity: 1; transform: translateY(0); }
         }
 
-        .mobile-search {
-          margin-bottom: 20px;
-        }
-
-        .mobile-category-select {
-          width: 100%;
-          padding: 12px;
-          border: 1px solid #e2e8f0;
-          border-radius: 6px;
-          margin-bottom: 12px;
-          font-size: 14px;
-        }
-
-        .mobile-search-input {
-          display: flex;
-          border: 1px solid #e2e8f0;
-          border-radius: 6px;
-          overflow: hidden;
-        }
-
-        .mobile-search-input input {
-          flex: 1;
-          padding: 12px;
-          border: none;
-          outline: none;
-          font-size: 14px;
-        }
-
-        .mobile-search-input button {
-          background: #3b82f6;
-          border: none;
-          padding: 12px 16px;
-          cursor: pointer;
-        }
-
-        .mobile-search-input svg {
-          width: 20px;
-          height: 20px;
-          color: white;
-        }
-
-        /* Mobile Navigation Menu */
-        .mobile-menu .nav {
-          flex-direction: column;
-          gap: 0;
-          width: 100%;
-        }
-
-        .mobile-menu .nav li {
-          width: 100%;
-          border-bottom: 1px solid #f1f5f9;
-        }
-
-        .mobile-menu .nav a {
-          padding: 16px 0;
-          color: #000000;
-          font-weight: 500;
-        }
-        
-        .mobile-menu .nav a:hover {
-          color: #3b82f6;
-        }
-        
-        .mobile-menu .main-white-button {
-          margin-left: 0;
-          margin-top: 16px;
-          width: 100%;
-          position: relative;
-          z-index: 1001;
-        }
-        
-        .mobile-menu .main-white-button button {
-          display: block;
-          text-align: center;
-          width: 100%;
-          padding: 14px 20px;
-          font-size: 16px;
+        .mobile-select {
           border-radius: 8px;
-          position: relative;
-          z-index: 1001;
-          pointer-events: auto;
-          touch-action: manipulation;
-          -webkit-tap-highlight-color: transparent;
+          border: 1px solid #dee2e6;
+          padding: 0.625rem;
+          margin-bottom: 1rem;
+          font-size: 0.9rem;
         }
-        
-        /* Mobile Dropdown Menu */
-        .mobile-menu .submenu .dropdown-menu {
-          position: static;
-          opacity: 1;
-          visibility: visible;
-          transform: none;
-          box-shadow: none;
-          background: #f8fafc;
-          margin-top: 8px;
-          border-radius: 6px;
-          padding: 10px 0;
-        }
-        
-        .mobile-menu .submenu .dropdown-menu a {
-          padding: 8px 20px;
-          font-size: 13px;
-        }
-        
-        .mobile-menu .category-header {
-          padding: 8px 20px;
-          font-size: 11px;
-          margin-bottom: 2px;
-        }
-
-        .mobile-overlay {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: rgba(0, 0, 0, 0.5);
-          z-index: 999;
-        }
-
-        /* Responsive Design */
-        @media (max-width: 1024px) {
-          .search-section {
-            margin: 0 20px;
-            max-width: 400px;
-          }
-          
-          .nav-menu {
-            gap: 16px;
-          }
-          
-          .auth-buttons {
-            gap: 8px;
-          }
+        .mobile-select:focus {
+          border-color: #0d6efd;
+          box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15);
         }
 
         @media (max-width: 768px) {
-          .header-container {
-            padding: 0 16px;
-          }
-          
-          .main-navigation {
-            display: none;
-          }
-          
-          .mobile-menu-toggle {
-            display: flex;
-          }
-          
-          .search-section {
-            display: none;
-          }
-          
-          .logo-text {
-            font-size: 18px;
-          }
-          
-          /* Hide desktop dropdown menus on mobile */
-          .submenu .dropdown-menu {
-            display: none;
-          }
+          .search-form { display: none; }
         }
-
-        @media (max-width: 480px) {
-          .header-container {
-            padding: 0 12px;
-          }
-          
-          .logo-text {
-            font-size: 16px;
-          }
-          
-          .logo-icon {
-            width: 28px;
-            height: 28px;
-          }
-          
-          .mobile-menu {
-            padding: 16px;
-          }
-          
-          .mobile-search {
-            margin-bottom: 16px;
+        @media (min-width: 769px) and (max-width: 992px) {
+          .search-form { margin: 0 1rem; }
+          .category-button {
+            min-width: 140px;
+            font-size: 0.8rem;
           }
         }
       `}</style>
 
-    </header>
+      <header className="header-wrapper">
+        <div className="container d-flex align-items-center justify-content-between py-3">
+          <Link to="/" className="logo-link d-flex align-items-center">
+            <img
+              src="/assets/images/logo-icon.png"
+              alt="Logo"
+              className="logo-icon me-2"
+            />
+            <span className="logo-text">Logika Einstein</span>
+          </Link>
+
+          <form onSubmit={handleSearch} className="search-form d-none d-md-flex">
+            <div className="input-group position-relative">
+              <div className="position-relative" ref={categoryRef}>
+                <button
+                  type="button"
+                  className="category-button"
+                  onClick={() => setCategoryDropdownOpen(!categoryDropdownOpen)}
+                >
+                  {selectedCategory}
+                  <i className={`bi bi-chevron-${categoryDropdownOpen ? "up" : "down"} ms-2`}></i>
+                </button>
+
+                {categoryDropdownOpen && (
+                  <div className="category-dropdown">
+                    <button
+                      className={`dropdown-item-custom ${selectedCategory === "ALL CATEGORIES" ? "active" : ""}`}
+                      onClick={handleResetCategory}
+                    >
+                      <span>
+                        <i className="bi bi-grid-3x3-gap me-2"></i>
+                        All Categories
+                      </span>
+                    </button>
+                    <hr className="my-1" style={{ opacity: 0.1 }} />
+                    
+                    {loading ? (
+                      <div style={{ padding: "1rem", textAlign: "center", color: "#6c757d" }}>
+                        <i className="bi bi-hourglass-split me-2"></i>
+                        Loading...
+                      </div>
+                    ) : (
+                      Object.entries(groupedCategories).map(([mainCategory, subs]) => (
+                        <div key={mainCategory}>
+                          <button
+                            className={`main-category-item ${expandedCategory === mainCategory ? "expanded" : ""}`}
+                            onClick={() => toggleMainCategory(mainCategory)}
+                          >
+                            <span>
+                              <i className="bi bi-folder me-2"></i>
+                              {mainCategory}
+                            </span>
+                            <i className="bi bi-chevron-down"></i>
+                          </button>
+                          
+                          <div className={`submenu-container ${expandedCategory === mainCategory ? "expanded" : ""}`}>
+                            {subs.map((sub) => (
+                              <button
+                                key={sub.id_sub_mapel}
+                                className={`submenu-item ${selectedCategoryId === sub.id_sub_mapel ? "active" : ""}`}
+                                onClick={() => handleCategorySelect(sub)}
+                              >
+                                {selectedCategoryId === sub.id_sub_mapel && <i className="bi bi-check2 me-2"></i>}
+                                {sub.sub_mapel}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <input
+                type="text"
+                className="search-input form-control"
+                placeholder="Cari kursus, topik, atau materi..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              <button className="search-button btn btn-primary" type="submit">
+                <i className="bi bi-search"></i>
+              </button>
+            </div>
+          </form>
+
+          <nav className="d-none d-md-block">
+            <NavigationMenu />
+          </nav>
+
+          <button
+            className="mobile-toggle btn d-md-none"
+            onClick={() => setMenuOpen(!menuOpen)}
+          >
+            <i className={`bi ${menuOpen ? "bi-x-lg" : "bi-list"} fs-5`}></i>
+          </button>
+        </div>
+
+        {menuOpen && (
+          <div className="mobile-menu d-md-none">
+            <form onSubmit={handleSearch}>
+              <select
+                className="mobile-select form-select"
+                value={selectedCategoryId || "ALL"}
+                onChange={(e) => {
+                  if (e.target.value === "ALL") {
+                    handleResetCategory();
+                  } else {
+                    const selected = subCategories.find(
+                      sub => sub.id_sub_mapel === parseInt(e.target.value)
+                    );
+                    if (selected) handleCategorySelect(selected);
+                  }
+                }}
+              >
+                <option value="ALL">All Categories</option>
+                {categories.map((mapel) => (
+                  <optgroup key={mapel.id_mapel} label={mapel.mapel}>
+                    {subCategories
+                      .filter(sub => sub.id_mapel === mapel.id_mapel && sub.status === 1)
+                      .map((sub) => (
+                        <option key={sub.id_sub_mapel} value={sub.id_sub_mapel}>
+                          {sub.sub_mapel}
+                        </option>
+                      ))}
+                  </optgroup>
+                ))}
+              </select>
+
+              <div className="input-group">
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Cari kursus..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  style={{ borderRadius: "8px 0 0 8px" }}
+                />
+                <button
+                  className="btn btn-primary"
+                  type="submit"
+                  style={{ borderRadius: "0 8px 8px 0" }}
+                >
+                  <i className="bi bi-search"></i>
+                </button>
+              </div>
+            </form>
+
+            <div className="mt-3">
+              <NavigationMenu />
+            </div>
+          </div>
+        )}
+      </header>
+    </>
   );
 };
 
