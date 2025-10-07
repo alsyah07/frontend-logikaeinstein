@@ -20,7 +20,7 @@ const CourseDetail = () => {
     setIsLoggedIn(!!ceklogin);
 
     // Fetch data dari API
-    fetch(`http://localhost:3100/api/v1/sub_mapel/${id}`)
+    fetch(`${import.meta.env.VITE_API_BASE_URL}/sub_mapel/${id}`)
       .then(res => res.json())
       .then(data => {
         if (data.success && data.data) {
@@ -28,7 +28,7 @@ const CourseDetail = () => {
           const datajadwalmapel = data.mapel;
 
           // Data mapel terkait
-          fetch(`http://localhost:3100/api/v1/mapel/${dataSubMapel.id_mapel}`)
+          fetch(`${import.meta.env.VITE_API_BASE_URL}/mapel/${dataSubMapel.id_mapel}`)
             .then(res => res.json())
             .then(resMapel => {
               if (resMapel.success) {

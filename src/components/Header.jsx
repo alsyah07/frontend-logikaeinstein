@@ -18,7 +18,7 @@ const Header = () => {
   const categoryRef = useRef(null);
 
   // Base URL untuk API
-  const API_BASE_URL = 'http://localhost:3100/api/v1';
+  const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}`;
 
   // Fetch categories (mapel) from API
   useEffect(() => {

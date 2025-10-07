@@ -15,7 +15,7 @@ const AllCourses = () => {
 
   // Ambil data dari API dengan axios
   useEffect(() => {
-    axios.get('http://localhost:3100/api/v1/sub_mapel')
+    axios.get(`${import.meta.env.VITE_API_BASE_URL}/sub_mapel`)
       .then((response) => {
         if (response.data.success) {
           setApiCourses(response.data.data);

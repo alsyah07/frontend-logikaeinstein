@@ -38,7 +38,7 @@ const CourseLearning = () => {
     try {
       setIsLoading(true);
       const response = await fetch(
-        `http://localhost:3100/api/v1/detail_video_mapel/sub_mapel/${courseId}`
+        `${import.meta.env.VITE_API_BASE_URL}/detail_video_mapel/sub_mapel/${courseId}`
       );
 
       if (!response.ok) {
