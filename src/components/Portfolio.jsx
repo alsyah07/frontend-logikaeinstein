@@ -17,13 +17,13 @@ const Portfolio = ({ onShowAllClick }) => {
   // Function to get Google Drive embed URL for iframe
   const getGoogleDriveEmbedUrl = (driveUrl) => {
     let fileId = null;
-    
+
     const patterns = [
       /\/file\/d\/([^\/]+)/,
       /[?&]id=([^&]+)/,
       /\/open\?id=([^&]+)/
     ];
-    
+
     for (const pattern of patterns) {
       const match = driveUrl.match(pattern);
       if (match) {
@@ -31,11 +31,11 @@ const Portfolio = ({ onShowAllClick }) => {
         break;
       }
     }
-    
+
     if (fileId) {
       return `https://drive.google.com/file/d/${fileId}/preview`;
     }
-    
+
     return null;
   };
 
@@ -47,7 +47,7 @@ const Portfolio = ({ onShowAllClick }) => {
         /\/file\/d\/([^\/]+)/,
         /[?&]id=([^&]+)/,
       ];
-      
+
       for (const pattern of patterns) {
         const match = course.video_url.match(pattern);
         if (match) {
@@ -56,7 +56,7 @@ const Portfolio = ({ onShowAllClick }) => {
         }
       }
     }
-    
+
     // Fallback
     return '/assets/images/default-course.jpg';
   };
@@ -94,11 +94,11 @@ const Portfolio = ({ onShowAllClick }) => {
                   const videoResponse = await axios.get(
                     `${API_BASE_URL}/detail_video_mapel/sub_mapel/${course.id_sub_mapel}`
                   );
-                  
+
                   if (Array.isArray(videoResponse.data) && videoResponse.data.length > 0) {
                     const activeVideos = videoResponse.data.filter(v => v.status === 1);
                     videoCount = activeVideos.length;
-                    
+
                     if (activeVideos.length > 0) {
                       videoUrl = activeVideos[0].video_mapel;
                     }
@@ -125,7 +125,7 @@ const Portfolio = ({ onShowAllClick }) => {
                 };
               })
           );
-          
+
           setCourses(transformedCourses);
           setLoading(false);
         }
@@ -139,8 +139,8 @@ const Portfolio = ({ onShowAllClick }) => {
   }, [API_BASE_URL]);
 
   const filteredCourses = useMemo(() => {
-    return activeFilter === '*' 
-      ? courses 
+    return activeFilter === '*'
+      ? courses
       : courses.filter(course => course.category === activeFilter);
   }, [activeFilter, courses]);
 
@@ -195,14 +195,14 @@ const Portfolio = ({ onShowAllClick }) => {
           <div className="col-lg-12">
             <div className="portfolio-filters">
               <ul>
-                <li 
+                <li
                   className={activeFilter === '*' ? 'active' : ''}
                   onClick={() => handleFilterClick('*')}
                 >
                   All Categories
                 </li>
                 {categories.map(cat => (
-                  <li 
+                  <li
                     key={cat.id_mapel}
                     className={activeFilter === cat.kode_mapel.toLowerCase() ? 'active' : ''}
                     onClick={() => handleFilterClick(cat.kode_mapel.toLowerCase())}
@@ -223,8 +223,8 @@ const Portfolio = ({ onShowAllClick }) => {
             </div>
           ) : (
             filteredCourses.map((course, index) => (
-              <div 
-                key={`${activeFilter}-${course.id}`} 
+              <div
+                key={`${activeFilter}-${course.id}`}
                 className={`col-lg-4 col-md-6 portfolio-item ${course.category} ${isAnimating ? 'fade-out' : 'fade-in'}`}
                 style={{
                   animationDelay: `${index * 0.1}s`
@@ -264,8 +264,8 @@ const Portfolio = ({ onShowAllClick }) => {
                         <p style={{ margin: 0, fontSize: '0.9rem' }}>No videos available</p>
                       </div>
                     ) : (
-                      <img 
-                        src={course.thumbnail} 
+                      <img
+                        src={course.thumbnail}
                         alt={course.title}
                         style={{
                           position: 'absolute',
@@ -293,10 +293,10 @@ const Portfolio = ({ onShowAllClick }) => {
                         <span>👑</span> Members Only
                       </span>
                       {course.videoCount > 0 && (
-                        <span className="video-count" style={{ 
-                          marginLeft: '0.5rem', 
-                          fontSize: '0.85rem', 
-                          color: '#6c757d' 
+                        <span className="video-count" style={{
+                          marginLeft: '0.5rem',
+                          fontSize: '0.85rem',
+                          color: '#6c757d'
                         }}>
                           <i className="bi bi-play-circle me-1"></i>
                           {course.videoCount} Video{course.videoCount > 1 ? 's' : ''}
@@ -344,15 +344,15 @@ const Portfolio = ({ onShowAllClick }) => {
                 </div>
               </div>
               <div className="modal-actions">
-                <button 
-  className="btn-preview"
-  onClick={() => navigate(`/course/${selectedCourse.id}`)}
->
-  PREVIEW THIS COURSE
-  <div className="course-label" style={{ marginLeft: '12px' }}>
-    {selectedCourse.title}
-  </div>
-</button>
+                <button
+                  className="btn-preview"
+                  onClick={() => navigate(`/course/${selectedCourse.id}`)}
+                >
+                  PREVIEW THIS COURSE
+                  <div className="course-label" style={{ marginLeft: '12px' }}>
+                    {selectedCourse.title}
+                  </div>
+                </button>
                 <button className="btn-wishlist">
                   <span className="heart-icon">♡</span>
                   Add to Wishlist
