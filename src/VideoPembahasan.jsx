@@ -557,11 +557,12 @@ Terima kasih! 🙏`
           </div>
         )}
 
-        <iframe
+         <iframe
           src={currentVideo.url}
           title={currentVideo.title}
           frameBorder="0"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allow="autoplay"
+          sandbox="allow-scripts allow-same-origin"
           allowFullScreen
           loading="lazy"
           onLoad={handleVideoLoad}
@@ -571,7 +572,7 @@ Terima kasih! 🙏`
             top: 0,
             left: 0,
             width: '100%',
-            height: '100%'
+            height: '100%',
           }}
         />
       </>
