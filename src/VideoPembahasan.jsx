@@ -3,7 +3,7 @@ import { useLocation, useNavigate, useParams, useSearchParams } from 'react-rout
 import axios from 'axios'
 import Swal from 'sweetalert2'
 
-export default function Video() {
+export default function VideoPembahasan() {
   const [currentUser, setCurrentUser] = useState(null);
   const navigate = useNavigate()
   const { state } = useLocation()
@@ -141,10 +141,11 @@ export default function Video() {
       try {
         const base = import.meta.env.VITE_API_BASE_URL
         const endpoint = userId
-          ? `${base}/detail_video_mapel/sub_mapel/${id}/${userId}`
-          : `${base}/detail_video_mapel/sub_mapel/${id}`
-
+          ? `${base}/detail_video_pembahasan/${id}/${userId}`
+          : `${base}/detail_video_pembahasan/${id}`
+        console.log(endpoint)
         const res = await axios.get(endpoint)
+        console.log(res)
         const data = res.data?.data || {}
         const items = data.detail_video_mapel || []
         const redeem = data.redeem
@@ -179,7 +180,7 @@ export default function Video() {
         
         setFreePlayableCount(freeCount)
         setIsPremiumUser(userIsPremium)
-
+        //console.log("items",items[0].sub_mapel)
         const mapped = items.map((it, idx) => ({
           id_detail_video_mapel: it.id_detail_video_mapel,
           id_sub_mapel_detail: it.id_sub_mapel_detail,

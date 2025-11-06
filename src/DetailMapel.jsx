@@ -239,7 +239,7 @@ export default function DetailMapel() {
                                             <span>Lihat Teori</span>
                                         </a>
                                         <a
-                                             href={`/video/${selectedMateri?.id_sub_mapel_detail || selectedMateri?.id || '1'}`}
+                                             href={`/pembahasan/${selectedMateri?.id_sub_mapel_detail || selectedMateri?.id || '1'}/${selectedMateri?.judul || '1'}`}
                                             className="btn btn-outline-primary rounded-pill d-flex align-items-center justify-content-center gap-2 py-3"
                                             style={{ 
                                                 borderWidth: '2px',

@@ -76,29 +76,29 @@ export default function Index() {
     const navigate = useNavigate();
 
     // ==================== DEVICE TRACKING FUNCTIONS ====================
-    
+
     // Generate unique device ID
     const generateDeviceId = () => {
         // Cek apakah sudah ada device ID di localStorage
         let deviceId = localStorage.getItem('device_id');
-        
+
         if (!deviceId) {
             // Generate device ID baru berdasarkan informasi browser dan waktu
             const userAgent = navigator.userAgent;
             const screenResolution = `${window.screen.width}x${window.screen.height}`;
             const timestamp = Date.now();
             const randomString = Math.random().toString(36).substring(2, 15);
-            
+
             // Kombinasi untuk membuat ID unik
             const combinedString = `${userAgent}-${screenResolution}-${timestamp}-${randomString}`;
-            
+
             // Hash sederhana (gunakan btoa untuk encoding)
             deviceId = btoa(combinedString).substring(0, 32);
-            
+
             // Simpan ke localStorage
             localStorage.setItem('device_id', deviceId);
         }
-        
+
         return deviceId;
     };
 
@@ -107,7 +107,7 @@ export default function Index() {
         const userAgent = navigator.userAgent;
         let deviceType = 'Unknown';
         let browserName = 'Unknown';
-        
+
         // Detect device type
         if (/mobile/i.test(userAgent)) {
             deviceType = 'Mobile';
@@ -116,7 +116,7 @@ export default function Index() {
         } else {
             deviceType = 'Desktop';
         }
-        
+
         // Detect browser
         if (userAgent.includes('Chrome')) {
             browserName = 'Chrome';
@@ -127,7 +127,7 @@ export default function Index() {
         } else if (userAgent.includes('Edge')) {
             browserName = 'Edge';
         }
-        
+
         return {
             type: deviceType,
             browser: browserName,
@@ -140,12 +140,12 @@ export default function Index() {
         try {
             // Ambil device ID yang tersimpan untuk user ini
             const storedDeviceId = localStorage.getItem(`user_${userId}_device`);
-            
+
             if (storedDeviceId && storedDeviceId !== currentDeviceId) {
                 // Device berbeda terdeteksi
                 return false;
             }
-            
+
             return true;
         } catch (error) {
             console.error('Error checking device session:', error);
@@ -160,7 +160,7 @@ export default function Index() {
         const deviceCheckInterval = setInterval(async () => {
             const currentDeviceId = generateDeviceId();
             const isValidDevice = await checkDeviceSession(currentUser.id, currentDeviceId);
-            
+
             if (!isValidDevice) {
                 // Logout otomatis jika device berbeda
                 handleAutoLogout();
@@ -201,11 +201,11 @@ export default function Index() {
                 if (response.data.success && response.data.data.length > 0) {
                     // Simpan data lengkap mapel
                     setCategoriesData(response.data.data);
-                    
+
                     // Extract nama mapel untuk categories
                     const mapelList = response.data.data.map(item => item.mapel);
                     setCategories(mapelList);
-                    
+
                     // Set default category ke yang pertama
                     setCategory(mapelList[0]);
                 }
@@ -234,12 +234,14 @@ export default function Index() {
             setIsLoadingCourses(true);
             try {
                 const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/sub_mapel/${selectedMapel.id_mapel}`);
+
                 if (response.data.success && response.data.data) {
                     // Transform data dari API ke format yang dibutuhkan
                     const transformedCourses = response.data.data.map(item => ({
                         id: item.id_sub_mapel,
                         id_sub_mapel: item.id_sub_mapel, // Tambahkan untuk routing
                         title: item.sub_mapel,
+                        type_mapel: item.id_working_hours,
                         category: item.mapel,
                         progress: 0, // Bisa disesuaikan jika ada data progress dari user
                         rating: parseFloat(item.rating) || 0,
@@ -251,6 +253,7 @@ export default function Index() {
                         date: item.date,
                         kode_mapel: item.kode_mapel
                     }));
+                    console.log("response", transformedCourses)
                     setCourses(transformedCourses);
                 }
             } catch (error) {
@@ -270,11 +273,11 @@ export default function Index() {
         if (storedUser) {
             try {
                 const userData = JSON.parse(storedUser);
-                
+
                 // Validasi device
                 const currentDeviceId = generateDeviceId();
                 const storedDeviceId = localStorage.getItem(`user_${userData.id}_device`);
-                
+
                 if (storedDeviceId && storedDeviceId !== currentDeviceId) {
                     // Device berbeda, logout otomatis
                     handleAutoLogout();
@@ -316,7 +319,7 @@ export default function Index() {
                         try {
                             const obj = JSON.parse(val);
                             migrated.push(obj);
-                        } catch {}
+                        } catch { }
                     }
                 }
                 if (migrated.length) {
@@ -519,11 +522,11 @@ export default function Index() {
 
             if (response.data.success) {
                 const userData = response.data.data.user;
-                
+
                 // Generate dan simpan device ID
                 const currentDeviceId = generateDeviceId();
                 const storedDeviceId = localStorage.getItem(`user_${userData.id}_device`);
-                
+
                 // Cek apakah user sudah login di device lain
                 if (storedDeviceId && storedDeviceId !== currentDeviceId) {
                     // Konfirmasi logout device lain
@@ -547,17 +550,17 @@ export default function Index() {
                         return;
                     }
                 }
-                
+
                 // Simpan device ID untuk user ini
                 localStorage.setItem(`user_${userData.id}_device`, currentDeviceId);
-                
+
                 // Get device info untuk logging
                 const deviceInfo = getDeviceInfo();
                 console.log('Login from device:', {
                     deviceId: currentDeviceId,
                     ...deviceInfo
                 });
-                
+
                 // Simpan data user ke localStorage
                 localStorage.setItem('user', JSON.stringify(userData));
                 setCurrentUser(userData);
@@ -651,11 +654,11 @@ export default function Index() {
 
                         if (loginResponse.data.success) {
                             const userData = loginResponse.data.data.user;
-                            
+
                             // Generate dan simpan device ID untuk user baru
                             const currentDeviceId = generateDeviceId();
                             localStorage.setItem(`user_${userData.id}_device`, currentDeviceId);
-                            
+
                             // Simpan data user ke localStorage
                             localStorage.setItem('user', JSON.stringify(userData));
                             setCurrentUser(userData);
@@ -677,7 +680,7 @@ export default function Index() {
                         // Jika auto login gagal, arahkan ke tab login
                         setAuthTab('login');
                         setLoginEmail(tempEmail);
-                        
+
                         Swal.fire({
                             icon: 'warning',
                             title: 'Silakan Login Manual',
@@ -712,7 +715,7 @@ export default function Index() {
                 confirmButtonText: 'Coba Lagi',
                 confirmButtonColor: '#155ea0',
             });
-            
+
             setIsLoading(false);
         }
     };
@@ -735,7 +738,7 @@ export default function Index() {
                 if (currentUser) {
                     localStorage.removeItem(`user_${currentUser.id}_device`);
                 }
-                
+
                 localStorage.removeItem('user');
                 setCurrentUser(null);
                 setTab('Home');
@@ -759,6 +762,7 @@ export default function Index() {
 
     // Handler untuk navigate ke detail mapel - DENGAN CEK LOGIN
     const handleCourseClick = (course) => {
+        //
         // Cek apakah user sudah login
         if (!currentUser) {
             // Jika belum login, tampilkan modal konfirmasi
@@ -780,190 +784,134 @@ export default function Index() {
             });
             return;
         }
-
+        console.log("course", course.type_mapel)
         // Jika sudah login, navigate ke /detail-mapel/{id_sub_mapel}
-        navigate(`/detail-mapel/${course.id_sub_mapel}`, { 
-            state: { course } // Pass course data jika diperlukan di halaman detail
-        });
-    };
+        if (course.type_mapel == 0){
+            navigate(`/detail-mapel/${course.id_sub_mapel}`, {
+                state: { course } // Pass course data jika diperlukan di halaman detail
+            });
+        } else if(course.type_mapel==1){
+            navigate(`/video/${course.id_sub_mapel}/${course.title}`, {
+                state: { course } // Pass course data jika diperlukan di halaman detail
+            });
+        } 
 
-    const renderContent = () => {
-        if (tab === 'Home') {
-            return (
-                <div className="container" style={{ maxWidth: '1200px' }}>
-                    {/* Welcome Banner */}
-                    <div className="mb-3 mb-md-4 animate-in">
-                        <div
-                            className="rounded-4 p-4 text-white position-relative overflow-hidden"
-                            style={{
-                                background: 'linear-gradient(135deg, #155ea0 0%, #829dc5ff 100%)',
-                                minHeight: '280px'
-                            }}
-                        >
-                            <div className="position-relative" style={{ zIndex: 2 }}>
-                                <div className="d-flex align-items-center gap-2 mb-3">
-                                    <div
-                                        className="bg-white bg-opacity-25 rounded-3 d-flex align-items-center justify-content-center"
-                                        style={{ width: '48px', height: '48px', fontSize: '24px' }}
-                                    >
-                                        👋
-                                    </div>
-                                    <span
-                                        className="badge rounded-pill px-3 py-2"
-                                        style={{
-                                            background: 'rgba(255,255,255,0.25)',
-                                            fontSize: '13px',
-                                            fontWeight: 700,
-                                        }}
-                                    >
-                                        Level 5 - Intermediate
-                                    </span>
-                                </div>
+};
 
-                                <h1 className="fw-bold mb-3" style={{ fontSize: '28px', lineHeight: 1.2 }}>
-                                    {currentUser ? `Halo, ${currentUser.name}!` : 'Cara Belajar Seru'}
-                                    <br />
-                                    {currentUser ? 'Selamat Datang Kembali' : 'dan Gampang'}
-                                </h1>
-
-                                <p className="mb-4 opacity-90" style={{ fontSize: '15px', lineHeight: 1.5 }}>
-                                    Kuasai konsep matematika dan fisika dengan metode pembelajaran interaktif dan menyenangkan
-                                </p>
-
-                                <button
-                                    className="btn btn-light rounded-pill px-4 py-3 fw-bold shadow d-inline-flex align-items-center gap-2"
-                                    style={{ fontSize: '15px' }}
+const renderContent = () => {
+    if (tab === 'Home') {
+        return (
+            <div className="container" style={{ maxWidth: '1200px' }}>
+                {/* Welcome Banner */}
+                <div className="mb-3 mb-md-4 animate-in">
+                    <div
+                        className="rounded-4 p-4 text-white position-relative overflow-hidden"
+                        style={{
+                            background: 'linear-gradient(135deg, #155ea0 0%, #829dc5ff 100%)',
+                            minHeight: '280px'
+                        }}
+                    >
+                        <div className="position-relative" style={{ zIndex: 2 }}>
+                            <div className="d-flex align-items-center gap-2 mb-3">
+                                <div
+                                    className="bg-white bg-opacity-25 rounded-3 d-flex align-items-center justify-content-center"
+                                    style={{ width: '48px', height: '48px', fontSize: '24px' }}
                                 >
-                                    <span>🚀</span>
-                                    <span>Lanjutkan Belajar</span>
-                                </button>
+                                    👋
+                                </div>
+                                <span
+                                    className="badge rounded-pill px-3 py-2"
+                                    style={{
+                                        background: 'rgba(255,255,255,0.25)',
+                                        fontSize: '13px',
+                                        fontWeight: 700,
+                                    }}
+                                >
+                                    Level 5 - Intermediate
+                                </span>
                             </div>
 
-                            <div
-                                className="position-absolute d-none d-sm-block"
-                                style={{
-                                    right: '20px',
-                                    bottom: '20px',
-                                    fontSize: '100px',
-                                    opacity: 0.15,
-                                    zIndex: 1,
-                                }}
+                            <h1 className="fw-bold mb-3" style={{ fontSize: '28px', lineHeight: 1.2 }}>
+                                {currentUser ? `Halo, ${currentUser.name}!` : 'Cara Belajar Seru'}
+                                <br />
+                                {currentUser ? 'Selamat Datang Kembali' : 'dan Gampang'}
+                            </h1>
+
+                            <p className="mb-4 opacity-90" style={{ fontSize: '15px', lineHeight: 1.5 }}>
+                                Kuasai konsep matematika dan fisika dengan metode pembelajaran interaktif dan menyenangkan
+                            </p>
+
+                            <button
+                                className="btn btn-light rounded-pill px-4 py-3 fw-bold shadow d-inline-flex align-items-center gap-2"
+                                style={{ fontSize: '15px' }}
                             >
-                                🎓
-                            </div>
+                                <span>🚀</span>
+                                <span>Lanjutkan Belajar</span>
+                            </button>
                         </div>
-                    </div>
 
-                    {/* Search Bar */}
-                    <div className="position-relative mb-3 mb-md-4">
                         <div
-                            className="position-absolute d-flex align-items-center justify-content-center"
+                            className="position-absolute d-none d-sm-block"
                             style={{
-                                left: '20px',
-                                top: '50%',
-                                transform: 'translateY(-50%)',
-                                width: '20px',
-                                height: '20px',
-                                zIndex: 10
+                                right: '20px',
+                                bottom: '20px',
+                                fontSize: '100px',
+                                opacity: 0.15,
+                                zIndex: 1,
                             }}
                         >
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2.5">
-                                <circle cx="11" cy="11" r="8" />
-                                <path d="m21 21-4.35-4.35" />
-                            </svg>
+                            🎓
                         </div>
-                        <input
-                            type="text"
-                            className="form-control border-0 shadow-sm rounded-pill"
-                            placeholder="Cari Mata Pelajaran matematika atau fisika..."
-                            value={query}
-                            onChange={(e) => setQuery(e.target.value)}
-                            style={{
-                                backgroundColor: 'white',
-                                paddingLeft: '52px',
-                                paddingRight: '24px',
-                                fontSize: '15px',
-                                height: '56px',
-                            }}
-                        />
                     </div>
+                </div>
 
-                    {/* Category Filter */}
-                    <div className="mb-4 no-scrollbar" style={{ overflowX: 'auto', overflowY: 'hidden' }}>
-                        {isLoadingCategories ? (
-                            <div className="text-center py-3">
-                                <div className="spinner-border text-primary" role="status">
-                                    <span className="visually-hidden">Loading...</span>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="d-flex flex-nowrap gap-2 pb-2">
-                                {categories.map((c) => {
-                                    const isActive = c === category;
-                                    const catData = categoryData[c] || {
-                                        color: '#667eea',
-                                        emoji: '📚',
-                                        icon: '📚',
-                                        gradient: 'linear-gradient(135deg, #2e6ca9 0%, #9dc6f4ff 100%)',
-                                        lightGradient: 'linear-gradient(135deg, #2e6ca9 0%, #9dc6f4ff 100%)'
-                                    };
-
-                                    return (
-                                        <button
-                                            key={c}
-                                            className="category-btn btn rounded-pill border-0 text-nowrap d-flex align-items-center gap-2 shadow-sm flex-shrink-0"
-                                            style={{
-                                                background: isActive ? catData.gradient : 'white',
-                                                color: isActive ? 'white' : '#6b7280',
-                                                padding: '12px 24px',
-                                                fontWeight: isActive ? '700' : '600',
-                                                fontSize: '15px',
-                                                boxShadow: isActive ? '0 4px 20px rgba(46, 108, 169, 0.4)' : '0 2px 8px rgba(0,0,0,0.08)',
-                                                whiteSpace: 'nowrap',
-                                            }}
-                                            onClick={() => setCategory(c)}
-                                        >
-                                            <span style={{ fontSize: '20px' }}>{catData.icon}</span>
-                                            <span>{c}</span>
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        )}
+                {/* Search Bar */}
+                <div className="position-relative mb-3 mb-md-4">
+                    <div
+                        className="position-absolute d-flex align-items-center justify-content-center"
+                        style={{
+                            left: '20px',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            width: '20px',
+                            height: '20px',
+                            zIndex: 10
+                        }}
+                    >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2.5">
+                            <circle cx="11" cy="11" r="8" />
+                            <path d="m21 21-4.35-4.35" />
+                        </svg>
                     </div>
+                    <input
+                        type="text"
+                        className="form-control border-0 shadow-sm rounded-pill"
+                        placeholder="Cari Mata Pelajaran matematika atau fisika..."
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        style={{
+                            backgroundColor: 'white',
+                            paddingLeft: '52px',
+                            paddingRight: '24px',
+                            fontSize: '15px',
+                            height: '56px',
+                        }}
+                    />
+                </div>
 
-                    {/* Section Header */}
-                    {!isLoadingCategories && category && (
-                        <div className="d-flex align-items-center justify-content-between mb-3 mb-md-4">
-                            <div>
-                                <h4 className="fw-bold mb-1" style={{ fontSize: '20px' }}>
-                                    {`${categoryData[category]?.emoji || '📚'} Mata Pelajaran ${category}`}
-                                </h4>
-                                <p className="text-muted mb-0" style={{ fontSize: '13px' }}>
-                                    {isLoadingCourses ? 'Memuat...' : `${filtered.length} Mata Pelajaran tersedia`}
-                                </p>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Course Grid */}
-                    {isLoadingCourses ? (
-                        <div className="text-center py-5">
-                            <div className="spinner-border text-primary" role="status" style={{ width: '3rem', height: '3rem' }}>
+                {/* Category Filter */}
+                <div className="mb-4 no-scrollbar" style={{ overflowX: 'auto', overflowY: 'hidden' }}>
+                    {isLoadingCategories ? (
+                        <div className="text-center py-3">
+                            <div className="spinner-border text-primary" role="status">
                                 <span className="visually-hidden">Loading...</span>
                             </div>
-                            <p className="mt-3 text-muted">Memuat Mata Pelajaran...</p>
-                        </div>
-                    ) : filtered.length === 0 ? (
-                        <div className="text-center py-5">
-                            <div style={{ fontSize: '64px', marginBottom: '16px' }}>📚</div>
-                            <h5 className="text-muted">Tidak ada Mata Pelajaran tersedia</h5>
-                            <p className="text-muted">Coba cari dengan kata kunci lain</p>
                         </div>
                     ) : (
-                        <div className="row g-3">
-                            {filtered.map((c, i) => {
-                                const catData = categoryData[c.category] || {
+                        <div className="d-flex flex-nowrap gap-2 pb-2">
+                            {categories.map((c) => {
+                                const isActive = c === category;
+                                const catData = categoryData[c] || {
                                     color: '#667eea',
                                     emoji: '📚',
                                     icon: '📚',
@@ -972,37 +920,100 @@ export default function Index() {
                                 };
 
                                 return (
-                                    <div key={i} className="col-12 col-md-6 col-lg-4 animate-in" style={{ animationDelay: `${i * 0.05}s` }}>
+                                    <button
+                                        key={c}
+                                        className="category-btn btn rounded-pill border-0 text-nowrap d-flex align-items-center gap-2 shadow-sm flex-shrink-0"
+                                        style={{
+                                            background: isActive ? catData.gradient : 'white',
+                                            color: isActive ? 'white' : '#6b7280',
+                                            padding: '12px 24px',
+                                            fontWeight: isActive ? '700' : '600',
+                                            fontSize: '15px',
+                                            boxShadow: isActive ? '0 4px 20px rgba(46, 108, 169, 0.4)' : '0 2px 8px rgba(0,0,0,0.08)',
+                                            whiteSpace: 'nowrap',
+                                        }}
+                                        onClick={() => setCategory(c)}
+                                    >
+                                        <span style={{ fontSize: '20px' }}>{catData.icon}</span>
+                                        <span>{c}</span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+
+                {/* Section Header */}
+                {!isLoadingCategories && category && (
+                    <div className="d-flex align-items-center justify-content-between mb-3 mb-md-4">
+                        <div>
+                            <h4 className="fw-bold mb-1" style={{ fontSize: '20px' }}>
+                                {`${categoryData[category]?.emoji || '📚'} Mata Pelajaran ${category}`}
+                            </h4>
+                            <p className="text-muted mb-0" style={{ fontSize: '13px' }}>
+                                {isLoadingCourses ? 'Memuat...' : `${filtered.length} Mata Pelajaran tersedia`}
+                            </p>
+                        </div>
+                    </div>
+                )}
+
+                {/* Course Grid */}
+                {isLoadingCourses ? (
+                    <div className="text-center py-5">
+                        <div className="spinner-border text-primary" role="status" style={{ width: '3rem', height: '3rem' }}>
+                            <span className="visually-hidden">Loading...</span>
+                        </div>
+                        <p className="mt-3 text-muted">Memuat Mata Pelajaran...</p>
+                    </div>
+                ) : filtered.length === 0 ? (
+                    <div className="text-center py-5">
+                        <div style={{ fontSize: '64px', marginBottom: '16px' }}>📚</div>
+                        <h5 className="text-muted">Tidak ada Mata Pelajaran tersedia</h5>
+                        <p className="text-muted">Coba cari dengan kata kunci lain</p>
+                    </div>
+                ) : (
+                    <div className="row g-3">
+                        {filtered.map((c, i) => {
+                            const catData = categoryData[c.category] || {
+                                color: '#667eea',
+                                emoji: '📚',
+                                icon: '📚',
+                                gradient: 'linear-gradient(135deg, #2e6ca9 0%, #9dc6f4ff 100%)',
+                                lightGradient: 'linear-gradient(135deg, #2e6ca9 0%, #9dc6f4ff 100%)'
+                            };
+
+                            return (
+                                <div key={i} className="col-12 col-md-6 col-lg-4 animate-in" style={{ animationDelay: `${i * 0.05}s` }}>
+                                    <div
+                                        className="card border-0 shadow-sm h-100 overflow-hidden card-hover"
+                                        style={{
+                                            borderRadius: '20px',
+                                            cursor: 'pointer',
+                                        }}
+                                        onClick={() => handleCourseClick(c)}
+                                    >
                                         <div
-                                            className="card border-0 shadow-sm h-100 overflow-hidden card-hover"
+                                            className="text-white position-relative"
                                             style={{
-                                                borderRadius: '20px',
-                                                cursor: 'pointer',
+                                                background: catData.gradient,
+                                                minHeight: '150px',
+                                                padding: '20px',
                                             }}
-                                            onClick={() => handleCourseClick(c)}
                                         >
-                                            <div
-                                                className="text-white position-relative"
-                                                style={{
-                                                    background: catData.gradient,
-                                                    minHeight: '150px',
-                                                    padding: '20px',
-                                                }}
-                                            >
-                                                <div className="d-flex justify-content-between align-items-start mb-3">
-                                                    <span
-                                                        className="badge text-white rounded-pill d-flex align-items-center gap-2"
-                                                        style={{
-                                                            backgroundColor: 'rgba(255,255,255,0.25)',
-                                                            fontSize: '12px',
-                                                            padding: '6px 14px',
-                                                            fontWeight: 700,
-                                                        }}
-                                                    >
-                                                        <span style={{ fontSize: '16px' }}>{catData.emoji}</span>
-                                                        <span>{c.category}</span>
-                                                    </span>
-                                                    {/* <div
+                                            <div className="d-flex justify-content-between align-items-start mb-3">
+                                                <span
+                                                    className="badge text-white rounded-pill d-flex align-items-center gap-2"
+                                                    style={{
+                                                        backgroundColor: 'rgba(255,255,255,0.25)',
+                                                        fontSize: '12px',
+                                                        padding: '6px 14px',
+                                                        fontWeight: 700,
+                                                    }}
+                                                >
+                                                    <span style={{ fontSize: '16px' }}>{catData.emoji}</span>
+                                                    <span>{c.category}</span>
+                                                </span>
+                                                {/* <div
                                                         className="d-flex align-items-center gap-1 rounded-pill"
                                                         style={{
                                                             backgroundColor: 'rgba(255,255,255,0.3)',
@@ -1014,17 +1025,17 @@ export default function Index() {
                                                         </svg>
                                                         <small style={{ fontSize: '13px', fontWeight: 700 }}>{c.rating.toFixed(1)}</small>
                                                     </div> */}
-                                                </div>
+                                            </div>
 
-                                                <h5 className="fw-bold mb-2" style={{ fontSize: '17px', lineHeight: 1.3 }}>
-                                                    {c.title}
-                                                </h5>
+                                            <h5 className="fw-bold mb-2" style={{ fontSize: '17px', lineHeight: 1.3 }}>
+                                                {c.title}
+                                            </h5>
 
-                                                <p className="mb-2 opacity-90" style={{ fontSize: '12px', lineHeight: 1.4 }}>
-                                                    {c.description.length > 80 ? `${c.description.substring(0, 80)}...` : c.description}
-                                                </p>
+                                            <p className="mb-2 opacity-90" style={{ fontSize: '12px', lineHeight: 1.4 }}>
+                                                {c.description.length > 80 ? `${c.description.substring(0, 80)}...` : c.description}
+                                            </p>
 
-                                                {/* <span
+                                            {/* <span
                                                     className="badge rounded-pill"
                                                     style={{
                                                         backgroundColor: 'rgba(255,255,255,0.25)',
@@ -1035,11 +1046,11 @@ export default function Index() {
                                                 >
                                                     {c.level}
                                                 </span> */}
-                                            </div>
+                                        </div>
 
-                                            <div className="card-body bg-white" style={{ padding: '20px' }}>
-                                                <div className="d-flex align-items-center justify-content-between mb-3 text-muted" style={{ fontSize: '13px' }}>
-                                                    {/* <div className="d-flex align-items-center gap-2">
+                                        <div className="card-body bg-white" style={{ padding: '20px' }}>
+                                            <div className="d-flex align-items-center justify-content-between mb-3 text-muted" style={{ fontSize: '13px' }}>
+                                                {/* <div className="d-flex align-items-center gap-2">
                                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                                             <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
                                                             <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
@@ -1053,59 +1064,59 @@ export default function Index() {
                                                         </svg>
                                                         <span className="fw-semibold">{c.students}</span>
                                                     </div> */}
-                                                </div>
-                                                <button
-                                                    className="btn w-100 rounded-pill fw-bold text-white d-flex align-items-center justify-content-center gap-2"
-                                                    style={{
-                                                        fontSize: '14px',
-                                                        padding: '14px 20px',
-                                                        background: catData.gradient,
-                                                        border: 'none',
-                                                    }}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleCourseClick(c);
-                                                    }}
-                                                >
-                                                    <span>🚀</span>
-                                                    <span>Mulai Belajar</span>
-                                                </button>
                                             </div>
+                                            <button
+                                                className="btn w-100 rounded-pill fw-bold text-white d-flex align-items-center justify-content-center gap-2"
+                                                style={{
+                                                    fontSize: '14px',
+                                                    padding: '14px 20px',
+                                                    background: catData.gradient,
+                                                    border: 'none',
+                                                }}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleCourseClick(c);
+                                                }}
+                                            >
+                                                <span>🚀</span>
+                                                <span>Mulai Belajar</span>
+                                            </button>
                                         </div>
                                     </div>
-                                );
-                            })}
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
+        );
+    } else if (tab === 'Riwayat') {
+        return (
+            <div className="container" style={{ maxWidth: '1200px' }}>
+                {/* Header Section */}
+                <div className="mb-4 animate-in">
+                    <div className="d-flex align-items-center gap-3 mb-3">
+                        <div
+                            className="d-flex align-items-center justify-content-center rounded-3"
+                            style={{
+                                width: '56px',
+                                height: '56px',
+                                background: 'linear-gradient(135deg, #155ea0 0%, #829dc5ff 100%)',
+                                fontSize: '28px',
+                            }}
+                        >
+                            📚
                         </div>
-                    )}
-                </div>
-            );
-        } else if (tab === 'Riwayat') {
-            return (
-                <div className="container" style={{ maxWidth: '1200px' }}>
-                    {/* Header Section */}
-                    <div className="mb-4 animate-in">
-                        <div className="d-flex align-items-center gap-3 mb-3">
-                            <div
-                                className="d-flex align-items-center justify-content-center rounded-3"
-                                style={{
-                                    width: '56px',
-                                    height: '56px',
-                                    background: 'linear-gradient(135deg, #155ea0 0%, #829dc5ff 100%)',
-                                    fontSize: '28px',
-                                }}
-                            >
-                                📚
-                            </div>
-                            <div>
-                                <h3 className="fw-bold mb-1">Riwayat Belajar</h3>
-                                <p className="text-muted mb-0" style={{ fontSize: '14px' }}>
-                                    Pantau progress dan aktivitas belajarmu
-                                </p>
-                            </div>
+                        <div>
+                            <h3 className="fw-bold mb-1">Riwayat Belajar</h3>
+                            <p className="text-muted mb-0" style={{ fontSize: '14px' }}>
+                                Pantau progress dan aktivitas belajarmu
+                            </p>
                         </div>
+                    </div>
 
-                        {/* Stats Overview */}
-                        {/* <div className="row g-3 mb-4">
+                    {/* Stats Overview */}
+                    {/* <div className="row g-3 mb-4">
                             <div className="col-6 col-md-3">
                                 <div className="stat-card card border-0 shadow-sm rounded-3 p-3 text-center">
                                     <div className="mb-2" style={{ fontSize: '32px' }}>🎯</div>
@@ -1135,561 +1146,561 @@ export default function Index() {
                                 </div>
                             </div>
                         </div> */}
-                    </div>
+                </div>
 
-                    {/* Course History List */}
-                    <div>
-                        <div className="d-flex align-items-center justify-content-between mb-3">
-                            <h5 className="fw-bold mb-0">Mata Pelajaran yang Sedang Dipelajari</h5>
-                            {savedVideos.length > 0 && (
-                                <button
-                                    className="btn btn-outline-danger btn-sm rounded-pill"
-                                    onClick={handleClearAllSavedVideos}
-                                >
-                                    Hapus Semua
-                                </button>
-                            )}
-                        </div>
-                        <div className="row g-3">
-                            {savedVideos.length === 0 ? (
-                                <div className="col-12">
-                                    <div className="card border-0 shadow-sm rounded-4 text-center">
-                                        <div className="card-body p-4">
-                                            <div className="d-flex flex-column align-items-center">
-                                                <div
-                                                    className="rounded-circle d-flex align-items-center justify-content-center mb-3"
-                                                    style={{
-                                                        width: '84px',
-                                                        height: '84px',
-                                                        background: 'linear-gradient(135deg, #eef2f7 0%, #f8fafc 100%)',
-                                                        color: '#9aa3b2',
-                                                        fontSize: '40px',
-                                                    }}
-                                                    aria-label="Tidak tersedia"
-                                                    title="Tidak tersedia"
-                                                >
-                                                    <span>📭</span>
-                                                </div>
-                                                <h6 className="fw-bold mb-1">Belum ada video tersimpan</h6>
-                                                <p className="text-muted mb-0" style={{ maxWidth: 520 }}>
-                                                    Simpan video dari halaman materi untuk ditampilkan di sini.
-                                                </p>
+                {/* Course History List */}
+                <div>
+                    <div className="d-flex align-items-center justify-content-between mb-3">
+                        <h5 className="fw-bold mb-0">Mata Pelajaran yang Sedang Dipelajari</h5>
+                        {savedVideos.length > 0 && (
+                            <button
+                                className="btn btn-outline-danger btn-sm rounded-pill"
+                                onClick={handleClearAllSavedVideos}
+                            >
+                                Hapus Semua
+                            </button>
+                        )}
+                    </div>
+                    <div className="row g-3">
+                        {savedVideos.length === 0 ? (
+                            <div className="col-12">
+                                <div className="card border-0 shadow-sm rounded-4 text-center">
+                                    <div className="card-body p-4">
+                                        <div className="d-flex flex-column align-items-center">
+                                            <div
+                                                className="rounded-circle d-flex align-items-center justify-content-center mb-3"
+                                                style={{
+                                                    width: '84px',
+                                                    height: '84px',
+                                                    background: 'linear-gradient(135deg, #eef2f7 0%, #f8fafc 100%)',
+                                                    color: '#9aa3b2',
+                                                    fontSize: '40px',
+                                                }}
+                                                aria-label="Tidak tersedia"
+                                                title="Tidak tersedia"
+                                            >
+                                                <span>📭</span>
                                             </div>
+                                            <h6 className="fw-bold mb-1">Belum ada video tersimpan</h6>
+                                            <p className="text-muted mb-0" style={{ maxWidth: 520 }}>
+                                                Simpan video dari halaman materi untuk ditampilkan di sini.
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
-                            ) : (
-                                savedVideos.map((item, idx) => {
-                                    const catData = categoryData[item.category] || {
-                                        color: '#667eea',
-                                        emoji: '📚',
-                                        gradient: 'linear-gradient(135deg, #2e6ca9 0%, #9dc6f4ff 100%)',
-                                    };
-                                    return (
-                                        <div key={idx} className="col-12 col-md-6">
-                                            <div className="card border-0 shadow-sm rounded-4 overflow-hidden card-hover">
-                                                <div className="card-body p-3 p-md-4">
-                                                    <div className="d-flex align-items-start gap-3 mb-3">
-                                                        <div
-                                                            className="d-flex align-items-center justify-content-center rounded-3 flex-shrink-0"
+                            </div>
+                        ) : (
+                            savedVideos.map((item, idx) => {
+                                const catData = categoryData[item.category] || {
+                                    color: '#667eea',
+                                    emoji: '📚',
+                                    gradient: 'linear-gradient(135deg, #2e6ca9 0%, #9dc6f4ff 100%)',
+                                };
+                                return (
+                                    <div key={idx} className="col-12 col-md-6">
+                                        <div className="card border-0 shadow-sm rounded-4 overflow-hidden card-hover">
+                                            <div className="card-body p-3 p-md-4">
+                                                <div className="d-flex align-items-start gap-3 mb-3">
+                                                    <div
+                                                        className="d-flex align-items-center justify-content-center rounded-3 flex-shrink-0"
+                                                        style={{
+                                                            width: '56px',
+                                                            height: '56px',
+                                                            background: catData.gradient,
+                                                            fontSize: '24px',
+                                                        }}
+                                                    >
+                                                        {catData.emoji}
+                                                    </div>
+                                                    <div className="flex-grow-1">
+                                                        <div className="d-flex align-items-center gap-2 mb-1">
+                                                            <h6 className="fw-bold mb-0" style={{ fontSize: '16px' }}>
+                                                                {item.title}
+                                                            </h6>
+                                                        </div>
+                                                        <div className="d-flex align-items-center gap-2 text-muted" style={{ fontSize: '12px' }}>
+                                                            <span>🕐 {item.lastAccessed}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="d-flex align-items-center gap-2">
+                                                        <span
+                                                            className="badge rounded-pill"
                                                             style={{
-                                                                width: '56px',
-                                                                height: '56px',
                                                                 background: catData.gradient,
-                                                                fontSize: '24px',
+                                                                color: 'white',
+                                                                fontSize: '11px',
+                                                                padding: '6px 12px',
                                                             }}
                                                         >
-                                                            {catData.emoji}
-                                                        </div>
-                                                        <div className="flex-grow-1">
-                                                            <div className="d-flex align-items-center gap-2 mb-1">
-                                                                <h6 className="fw-bold mb-0" style={{ fontSize: '16px' }}>
-                                                                    {item.title}
-                                                                </h6>
-                                                            </div>
-                                                            <div className="d-flex align-items-center gap-2 text-muted" style={{ fontSize: '12px' }}>
-                                                                <span>🕐 {item.lastAccessed}</span>
-                                                            </div>
-                                                        </div>
-                                                        <div className="d-flex align-items-center gap-2">
-                                                            <span
-                                                                className="badge rounded-pill"
-                                                                style={{
-                                                                    background: catData.gradient,
-                                                                    color: 'white',
-                                                                    fontSize: '11px',
-                                                                    padding: '6px 12px',
-                                                                }}
-                                                            >
-                                                                {item.status}
-                                                            </span>
+                                                            {item.status}
+                                                        </span>
 
-                                                        </div>
                                                     </div>
+                                                </div>
 
-                                                    <div className="mb-3">
-                                                        
+                                                <div className="mb-3">
+
+                                                </div>
+
+                                                <div className="row g-2 mb-3">
+
+                                                </div>
+
+                                                <div className="row g-2">
+                                                    <div className="col-8">
+                                                        <a
+                                                            href={`/video/${item.id_sub_mapel_detail}/${item.title}`}
+                                                            className="btn w-100 rounded-pill fw-bold text-white"
+                                                            style={{
+                                                                fontSize: '14px',
+                                                                padding: '12px 20px',
+                                                                background: catData.gradient,
+                                                                border: 'none',
+                                                            }}
+                                                        >
+                                                            Lanjutkan Belajar
+                                                        </a>
                                                     </div>
-
-                                                    <div className="row g-2 mb-3">
-                                                       
-                                                    </div>
-
-                                                    <div className="row g-2">
-                                                        <div className="col-8">
-                                                            <a
-                                                                href={`/video/${item.id_sub_mapel_detail}/${item.title}`}
-                                                                className="btn w-100 rounded-pill fw-bold text-white"
-                                                                style={{
-                                                                    fontSize: '14px',
-                                                                    padding: '12px 20px',
-                                                                    background: catData.gradient,
-                                                                    border: 'none',
-                                                                }}
-                                                            >
-                                                                Lanjutkan Belajar
-                                                            </a>
-                                                        </div>
-                                                        <div className="col-4">
-                                                            <button
-                                                                className="btn w-100 rounded-pill btn-outline-danger"
-                                                                style={{ fontSize: '14px', padding: '12px 20px' }}
-                                                                onClick={() => handleDeleteSavedVideo(item.id_sub_mapel_detail)}
-                                                            >
-                                                                Hapus
-                                                            </button>
-                                                        </div>
+                                                    <div className="col-4">
+                                                        <button
+                                                            className="btn w-100 rounded-pill btn-outline-danger"
+                                                            style={{ fontSize: '14px', padding: '12px 20px' }}
+                                                            onClick={() => handleDeleteSavedVideo(item.id_sub_mapel_detail)}
+                                                        >
+                                                            Hapus
+                                                        </button>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    )
-                                })
+                                    </div>
+                                )
+                            })
+                        )}
+                    </div>
+                </div>
+            </div>
+        );
+    } else if (tab === 'Profil') {
+        return (
+            <div className="container" style={{ maxWidth: '900px' }}>
+                {/* Profile Header */}
+                <div className="mb-4 animate-in">
+                    <div
+                        className="rounded-4 p-4 text-white position-relative overflow-hidden"
+                        style={{
+                            background: 'linear-gradient(135deg, #155ea0 0%, #829dc5ff 100%)',
+                            minHeight: '200px'
+                        }}
+                    >
+                        <div className="position-relative text-center" style={{ zIndex: 2 }}>
+                            <div
+                                className="mx-auto mb-3 d-flex align-items-center justify-content-center rounded-circle bg-white"
+                                style={{
+                                    width: '100px',
+                                    height: '100px',
+                                    fontSize: '48px',
+                                }}
+                            >
+                                👤
+                            </div>
+                            <h3 className="fw-bold mb-1">{currentUser ? currentUser.name : 'Tamu'}</h3>
+                            <p className="mb-0 opacity-90">
+                                {currentUser ? currentUser.email : 'Silakan login untuk melanjutkan'}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Quick Stats */}
+                <div className="row g-3 mb-4">
+                    {/* <div className="col-4">
+                        <div className="profile-stat card border-0 shadow-sm rounded-3 p-3 text-center">
+                            <div className="mb-2" style={{ fontSize: '32px' }}>🎯</div>
+                            <h5 className="fw-bold mb-0" style={{ color: '#155ea0' }}>Level 5</h5>
+                            <small className="text-muted">Intermediate</small>
+                        </div>
+                    </div>
+                    <div className="col-4">
+                        <div className="profile-stat card border-0 shadow-sm rounded-3 p-3 text-center">
+                            <div className="mb-2" style={{ fontSize: '32px' }}>⭐</div>
+                            <h5 className="fw-bold mb-0" style={{ color: '#155ea0' }}>850</h5>
+                            <small className="text-muted">Total Poin</small>
+                        </div>
+                    </div>
+                    <div className="col-4">
+                        <div className="profile-stat card border-0 shadow-sm rounded-3 p-3 text-center">
+                            <div className="mb-2" style={{ fontSize: '32px' }}>🔥</div>
+                            <h5 className="fw-bold mb-0" style={{ color: '#155ea0' }}>7</h5>
+                            <small className="text-muted">Hari Streak</small>
+                        </div>
+                    </div> */}
+                </div>
+
+                {/* Profile Menu */}
+                <div className="card border-0 shadow-sm rounded-4 mb-3">
+                    <div className="card-body p-0">
+                        <a href="#" className="d-flex align-items-center gap-3 p-3 text-decoration-none text-dark border-bottom">
+                            <div
+                                className="d-flex align-items-center justify-content-center rounded-3"
+                                style={{
+                                    width: '48px',
+                                    height: '48px',
+                                    background: 'linear-gradient(135deg, #155ea0 0%, #829dc5ff 100%)',
+                                    fontSize: '20px',
+                                }}
+                            >
+                                👤
+                            </div>
+                            <div className="flex-grow-1">
+                                <div className="fw-bold">Informasi Pribadi</div>
+                                <small className="text-muted">Kelola data diri kamu</small>
+                            </div>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M9 18l6-6-6-6" />
+                            </svg>
+                        </a>
+
+
+
+                        <a href="#" className="d-flex align-items-center gap-3 p-3 text-decoration-none text-dark border-bottom">
+                            <div
+                                className="d-flex align-items-center justify-content-center rounded-3"
+                                style={{
+                                    width: '48px',
+                                    height: '48px',
+                                    background: 'linear-gradient(135deg, #155ea0 0%, #829dc5ff 100%)',
+                                    fontSize: '20px',
+                                }}
+                            >
+                                💳
+                            </div>
+                            <div className="flex-grow-1">
+                                <div className="fw-bold">Langganan</div>
+                                <small className="text-muted">Kelola paket belajar kamu</small>
+                            </div>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M9 18l6-6-6-6" />
+                            </svg>
+                        </a>
+
+                        <a href="#" className="d-flex align-items-center gap-3 p-3 text-decoration-none text-dark">
+                            <div
+                                className="d-flex align-items-center justify-content-center rounded-3"
+                                style={{
+                                    width: '48px',
+                                    height: '48px',
+                                    background: 'linear-gradient(135deg, #155ea0 0%, #829dc5ff 100%)',
+                                    fontSize: '20px',
+                                }}
+                            >
+                                ℹ️
+                            </div>
+                            <div className="flex-grow-1">
+                                <div className="fw-bold">Bantuan & Dukungan</div>
+                                <small className="text-muted">Hubungi customer service</small>
+                            </div>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M9 18l6-6-6-6" />
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+
+                {/* Logout Button */}
+                {currentUser && (
+                    <button
+                        className="btn btn-outline-danger w-100 rounded-pill py-3 fw-bold"
+                        style={{ fontSize: '15px' }}
+                        onClick={handleLogout}
+                    >
+                        🚪 Keluar dari Akun
+                    </button>
+                )}
+            </div>
+        );
+    }
+};
+
+return (
+    <>
+        <style>{styles}</style>
+        <div className="d-flex flex-column" style={{ minHeight: '100vh', backgroundColor: '#f8f9fa' }}>
+            {/* Header */}
+            <header
+                className="glass-effect sticky-top"
+                style={{ zIndex: 1020, borderBottom: '1px solid rgba(0,0,0,0.05)' }}
+            >
+                <div className="container py-3" style={{ maxWidth: '1200px' }}>
+                    <div className="d-flex align-items-center justify-content-between">
+                        <div className="d-flex align-items-center gap-3">
+                            <img
+                                src="/images/logo_logika.png"
+                                alt="Logika Einstein"
+                                className="rounded-3 flex-shrink-0"
+                                style={{
+                                    width: '48px',
+                                    height: '48px',
+                                    objectFit: 'cover',
+                                    boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
+                                }}
+                            />
+                            <div style={{ minWidth: 0 }}>
+                                <h6 className="fw-bold mb-0" style={{ color: '#1a202c', fontSize: '16px' }}>
+                                    Logika Einstein
+                                </h6>
+                                <small className="text-muted d-none d-sm-block" style={{ fontSize: '13px' }}>
+                                    Matematika & Fisika
+                                </small>
+                            </div>
+                        </div>
+
+                        <div className="d-flex align-items-center ms-auto gap-2">
+                            {currentUser ? (
+                                <button
+                                    onClick={() => setTab('Profil')}
+                                    className="d-flex align-items-center gap-2 px-3 py-2 rounded-pill shadow-sm text-decoration-none border-0"
+                                    style={{ background: 'linear-gradient(135deg, #155ea0 0%, #829dc5ff 100%)' }}
+                                >
+                                    <span style={{ fontSize: '18px' }}>👤</span>
+                                    <span className="small fw-bold text-white">{currentUser.name}</span>
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={() => setShowAuthModal(true)}
+                                    className="d-flex align-items-center gap-2 px-3 py-2 rounded-pill shadow-sm text-decoration-none border-0"
+                                    style={{ background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' }}
+                                >
+                                    <span style={{ fontSize: '18px' }}>🔐</span>
+                                    <span className="small fw-bold text-white">Login</span>
+                                </button>
                             )}
                         </div>
                     </div>
                 </div>
-            );
-        } else if (tab === 'Profil') {
-            return (
-                <div className="container" style={{ maxWidth: '900px' }}>
-                    {/* Profile Header */}
-                    <div className="mb-4 animate-in">
-                        <div
-                            className="rounded-4 p-4 text-white position-relative overflow-hidden"
+            </header>
+
+            {/* Content */}
+            <main className="flex-grow-1 overflow-auto" style={{ paddingBottom: '80px' }}>
+                <div className="py-3 py-md-4">
+                    {renderContent()}
+                </div>
+            </main>
+
+            {/* Bottom Navigation */}
+            <nav
+                className="navbar fixed-bottom glass-effect border-top"
+                style={{
+                    boxShadow: '0 -4px 20px rgba(0,0,0,0.08)',
+                    zIndex: 1010,
+                    paddingTop: '10px',
+                    paddingBottom: '10px',
+                }}
+            >
+                <div className="container d-flex justify-content-around" style={{ maxWidth: '1200px' }}>
+                    {[
+                        { name: 'Home', icon: '🏠' },
+                        { name: 'Riwayat', icon: '📚' },
+                        { name: 'Profil', icon: '👤' },
+                    ].map(({ name, icon }) => (
+                        <button
+                            key={name}
+                            className={`nav-item btn d-flex flex-column align-items-center border-0 p-2 ${tab === name ? 'active' : ''}`}
+                            onClick={() => setTab(name)}
                             style={{
-                                background: 'linear-gradient(135deg, #155ea0 0%, #829dc5ff 100%)',
-                                minHeight: '200px'
+                                fontSize: '11px',
+                                color: tab === name ? '#155ea0' : '#9ca3af',
+                                transition: 'all 0.3s ease',
+                                minWidth: '70px',
+                                background: 'transparent',
+                                fontWeight: tab === name ? '700' : '600',
                             }}
                         >
-                            <div className="position-relative text-center" style={{ zIndex: 2 }}>
-                                <div
-                                    className="mx-auto mb-3 d-flex align-items-center justify-content-center rounded-circle bg-white"
-                                    style={{
-                                        width: '100px',
-                                        height: '100px',
-                                        fontSize: '48px',
-                                    }}
-                                >
-                                    👤
-                                </div>
-                                <h3 className="fw-bold mb-1">{currentUser ? currentUser.name : 'Tamu'}</h3>
-                                <p className="mb-0 opacity-90">
-                                    {currentUser ? currentUser.email : 'Silakan login untuk melanjutkan'}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Quick Stats */}
-                    <div className="row g-3 mb-4">
-                        <div className="col-4">
-                            <div className="profile-stat card border-0 shadow-sm rounded-3 p-3 text-center">
-                                <div className="mb-2" style={{ fontSize: '32px' }}>🎯</div>
-                                <h5 className="fw-bold mb-0" style={{ color: '#155ea0' }}>Level 5</h5>
-                                <small className="text-muted">Intermediate</small>
-                            </div>
-                        </div>
-                        <div className="col-4">
-                            <div className="profile-stat card border-0 shadow-sm rounded-3 p-3 text-center">
-                                <div className="mb-2" style={{ fontSize: '32px' }}>⭐</div>
-                                <h5 className="fw-bold mb-0" style={{ color: '#155ea0' }}>850</h5>
-                                <small className="text-muted">Total Poin</small>
-                            </div>
-                        </div>
-                        <div className="col-4">
-                            <div className="profile-stat card border-0 shadow-sm rounded-3 p-3 text-center">
-                                <div className="mb-2" style={{ fontSize: '32px' }}>🔥</div>
-                                <h5 className="fw-bold mb-0" style={{ color: '#155ea0' }}>7</h5>
-                                <small className="text-muted">Hari Streak</small>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Profile Menu */}
-                    <div className="card border-0 shadow-sm rounded-4 mb-3">
-                        <div className="card-body p-0">
-                            <a href="#" className="d-flex align-items-center gap-3 p-3 text-decoration-none text-dark border-bottom">
-                                <div
-                                    className="d-flex align-items-center justify-content-center rounded-3"
-                                    style={{
-                                        width: '48px',
-                                        height: '48px',
-                                        background: 'linear-gradient(135deg, #155ea0 0%, #829dc5ff 100%)',
-                                        fontSize: '20px',
-                                    }}
-                                >
-                                    👤
-                                </div>
-                                <div className="flex-grow-1">
-                                    <div className="fw-bold">Informasi Pribadi</div>
-                                    <small className="text-muted">Kelola data diri kamu</small>
-                                </div>
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M9 18l6-6-6-6" />
-                                </svg>
-                            </a>
-
-                            
-
-                            <a href="#" className="d-flex align-items-center gap-3 p-3 text-decoration-none text-dark border-bottom">
-                                <div
-                                    className="d-flex align-items-center justify-content-center rounded-3"
-                                    style={{
-                                        width: '48px',
-                                        height: '48px',
-                                        background: 'linear-gradient(135deg, #155ea0 0%, #829dc5ff 100%)',
-                                        fontSize: '20px',
-                                    }}
-                                >
-                                    💳
-                                </div>
-                                <div className="flex-grow-1">
-                                    <div className="fw-bold">Langganan</div>
-                                    <small className="text-muted">Kelola paket belajar kamu</small>
-                                </div>
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M9 18l6-6-6-6" />
-                                </svg>
-                            </a>
-
-                            <a href="#" className="d-flex align-items-center gap-3 p-3 text-decoration-none text-dark">
-                                <div
-                                    className="d-flex align-items-center justify-content-center rounded-3"
-                                    style={{
-                                        width: '48px',
-                                        height: '48px',
-                                        background: 'linear-gradient(135deg, #155ea0 0%, #829dc5ff 100%)',
-                                        fontSize: '20px',
-                                    }}
-                                >
-                                    ℹ️
-                                </div>
-                                <div className="flex-grow-1">
-                                    <div className="fw-bold">Bantuan & Dukungan</div>
-                                    <small className="text-muted">Hubungi customer service</small>
-                                </div>
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M9 18l6-6-6-6" />
-                                </svg>
-                            </a>
-                        </div>
-                    </div>
-
-                    {/* Logout Button */}
-                    {currentUser && (
-                        <button
-                            className="btn btn-outline-danger w-100 rounded-pill py-3 fw-bold"
-                            style={{ fontSize: '15px' }}
-                            onClick={handleLogout}
-                        >
-                            🚪 Keluar dari Akun
+                            <span style={{ fontSize: '24px', marginBottom: '2px' }}>{icon}</span>
+                            <small style={{ fontSize: '11px' }}>{name}</small>
                         </button>
-                    )}
+                    ))}
                 </div>
-            );
-        }
-    };
+            </nav>
+        </div>
 
-    return (
-        <>
-            <style>{styles}</style>
-            <div className="d-flex flex-column" style={{ minHeight: '100vh', backgroundColor: '#f8f9fa' }}>
-                {/* Header */}
-                <header
-                    className="glass-effect sticky-top"
-                    style={{ zIndex: 1020, borderBottom: '1px solid rgba(0,0,0,0.05)' }}
-                >
-                    <div className="container py-3" style={{ maxWidth: '1200px' }}>
-                        <div className="d-flex align-items-center justify-content-between">
-                            <div className="d-flex align-items-center gap-3">
-                                <img
-                                    src="/images/logo_logika.png"
-                                    alt="Logika Einstein"
-                                    className="rounded-3 flex-shrink-0"
-                                    style={{
-                                        width: '48px',
-                                        height: '48px',
-                                        objectFit: 'cover',
-                                        boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
-                                    }}
-                                />
-                                <div style={{ minWidth: 0 }}>
-                                    <h6 className="fw-bold mb-0" style={{ color: '#1a202c', fontSize: '16px' }}>
-                                        Logika Einstein
-                                    </h6>
-                                    <small className="text-muted d-none d-sm-block" style={{ fontSize: '13px' }}>
-                                        Matematika & Fisika
-                                    </small>
-                                </div>
-                            </div>
-
-                            <div className="d-flex align-items-center ms-auto gap-2">
-                                {currentUser ? (
-                                    <button
-                                        onClick={() => setTab('Profil')}
-                                        className="d-flex align-items-center gap-2 px-3 py-2 rounded-pill shadow-sm text-decoration-none border-0"
-                                        style={{ background: 'linear-gradient(135deg, #155ea0 0%, #829dc5ff 100%)' }}
-                                    >
-                                        <span style={{ fontSize: '18px' }}>👤</span>
-                                        <span className="small fw-bold text-white">{currentUser.name}</span>
-                                    </button>
-                                ) : (
-                                    <button
-                                        onClick={() => setShowAuthModal(true)}
-                                        className="d-flex align-items-center gap-2 px-3 py-2 rounded-pill shadow-sm text-decoration-none border-0"
-                                        style={{ background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' }}
-                                    >
-                                        <span style={{ fontSize: '18px' }}>🔐</span>
-                                        <span className="small fw-bold text-white">Login</span>
-                                    </button>
-                                )}
-                            </div>
-                        </div>
+        {/* Modal Autentikasi */}
+        <div
+            className={`modal fade ${showAuthModal ? 'show d-block' : ''}`}
+            tabIndex="-1"
+            aria-hidden={!showAuthModal}
+            style={{ backgroundColor: showAuthModal ? 'rgba(0,0,0,0.4)' : 'transparent' }}
+        >
+            <div className="modal-dialog modal-dialog-centered">
+                <div className="modal-content rounded-4">
+                    <div className="modal-header border-0">
+                        <h5 className="modal-title fw-bold">
+                            {authTab === 'login' ? '🔐 Masuk ke Akun' : '📝 Daftar Akun Baru'}
+                        </h5>
+                        <button
+                            type="button"
+                            className="btn-close"
+                            onClick={() => {
+                                setShowAuthModal(false);
+                            }}
+                            aria-label="Close"
+                        ></button>
                     </div>
-                </header>
 
-                {/* Content */}
-                <main className="flex-grow-1 overflow-auto" style={{ paddingBottom: '80px' }}>
-                    <div className="py-3 py-md-4">
-                        {renderContent()}
-                    </div>
-                </main>
-
-                {/* Bottom Navigation */}
-                <nav
-                    className="navbar fixed-bottom glass-effect border-top"
-                    style={{
-                        boxShadow: '0 -4px 20px rgba(0,0,0,0.08)',
-                        zIndex: 1010,
-                        paddingTop: '10px',
-                        paddingBottom: '10px',
-                    }}
-                >
-                    <div className="container d-flex justify-content-around" style={{ maxWidth: '1200px' }}>
-                        {[
-                            { name: 'Home', icon: '🏠' },
-                            { name: 'Riwayat', icon: '📚' },
-                            { name: 'Profil', icon: '👤' },
-                        ].map(({ name, icon }) => (
+                    <div className="modal-body">
+                        {/* Tab Switcher */}
+                        <div className="d-flex gap-2 mb-4">
                             <button
-                                key={name}
-                                className={`nav-item btn d-flex flex-column align-items-center border-0 p-2 ${tab === name ? 'active' : ''}`}
-                                onClick={() => setTab(name)}
-                                style={{
-                                    fontSize: '11px',
-                                    color: tab === name ? '#155ea0' : '#9ca3af',
-                                    transition: 'all 0.3s ease',
-                                    minWidth: '70px',
-                                    background: 'transparent',
-                                    fontWeight: tab === name ? '700' : '600',
-                                }}
-                            >
-                                <span style={{ fontSize: '24px', marginBottom: '2px' }}>{icon}</span>
-                                <small style={{ fontSize: '11px' }}>{name}</small>
-                            </button>
-                        ))}
-                    </div>
-                </nav>
-            </div>
-
-            {/* Modal Autentikasi */}
-            <div
-                className={`modal fade ${showAuthModal ? 'show d-block' : ''}`}
-                tabIndex="-1"
-                aria-hidden={!showAuthModal}
-                style={{ backgroundColor: showAuthModal ? 'rgba(0,0,0,0.4)' : 'transparent' }}
-            >
-                <div className="modal-dialog modal-dialog-centered">
-                    <div className="modal-content rounded-4">
-                        <div className="modal-header border-0">
-                            <h5 className="modal-title fw-bold">
-                                {authTab === 'login' ? '🔐 Masuk ke Akun' : '📝 Daftar Akun Baru'}
-                            </h5>
-                            <button
-                                type="button"
-                                className="btn-close"
-                                onClick={() => {
-                                    setShowAuthModal(false);
-                                }}
-                                aria-label="Close"
-                            ></button>
-                        </div>
-
-                        <div className="modal-body">
-                            {/* Tab Switcher */}
-                            <div className="d-flex gap-2 mb-4">
-                                <button
-                                    className={`btn rounded-pill px-4 py-2 flex-grow-1 ${authTab === 'login'
-                                            ? 'btn-primary'
-                                            : 'btn-outline-secondary'
-                                        }`}
-                                    onClick={() => handleTabSwitch('login')}
-                                    disabled={isLoading}
-                                >
-                                    Login
-                                </button>
-                                <button
-                                    className={`btn rounded-pill px-4 py-2 flex-grow-1 ${authTab === 'register'
-                                            ? 'btn-primary'
-                                            : 'btn-outline-secondary'
-                                        }`}
-                                    onClick={() => handleTabSwitch('register')}
-                                    disabled={isLoading}
-                                >
-                                    Register
-                                </button>
-                            </div>
-
-                            {/* Form Login */}
-                            {authTab === 'login' && (
-                                <form onSubmit={handleLogin}>
-                                    <div className="mb-3">
-                                        <label className="form-label fw-semibold">Email</label>
-                                        <input
-                                            type="email"
-                                            className="form-control rounded-pill px-4 py-2"
-                                            placeholder="nama@contoh.com"
-                                            value={loginEmail}
-                                            onChange={(e) => setLoginEmail(e.target.value)}
-                                            required
-                                            disabled={isLoading}
-                                        />
-                                    </div>
-                                    <div className="mb-4">
-                                        <label className="form-label fw-semibold">Password</label>
-                                        <input
-                                            type="password"
-                                            className="form-control rounded-pill px-4 py-2"
-                                            placeholder="••••••••"
-                                            value={loginPassword}
-                                            onChange={(e) => setLoginPassword(e.target.value)}
-                                            required
-                                            disabled={isLoading}
-                                        />
-                                    </div>
-                                    <button
-                                        type="submit"
-                                        className="btn btn-primary w-100 rounded-pill py-3 fw-bold"
-                                        disabled={isLoading}
-                                    >
-                                        {isLoading ? (
-                                            <>
-                                                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                                                Memproses...
-                                            </>
-                                        ) : (
-                                            '🚀 Masuk'
-                                        )}
-                                    </button>
-                                </form>
-                            )}
-
-                            {/* Form Register */}
-                            {authTab === 'register' && (
-                                <form onSubmit={handleRegister}>
-                                    <div className="mb-3">
-                                        <label className="form-label fw-semibold">Nama Lengkap</label>
-                                        <input
-                                            type="text"
-                                            className="form-control rounded-pill px-4 py-2"
-                                            placeholder="Nama Anda"
-                                            value={registerName}
-                                            onChange={(e) => setRegisterName(e.target.value)}
-                                            required
-                                            disabled={isLoading}
-                                        />
-                                    </div>
-                                    <div className="mb-3">
-                                        <label className="form-label fw-semibold">Email</label>
-                                        <input
-                                            type="email"
-                                            className="form-control rounded-pill px-4 py-2"
-                                            placeholder="nama@contoh.com"
-                                            value={registerEmail}
-                                            onChange={(e) => setRegisterEmail(e.target.value)}
-                                            required
-                                            disabled={isLoading}
-                                        />
-                                    </div>
-                                    <div className="mb-3">
-                                        <label className="form-label fw-semibold">Nomor Handphone</label>
-                                        <input
-                                            type="text"
-                                            className="form-control rounded-pill px-4 py-2"
-                                            placeholder="081234567890"
-                                            value={registerPhone}
-                                            onChange={(e) => setRegisterPhone(e.target.value)}
-                                            disabled={isLoading}
-                                        />
-                                        <small className="text-muted">Opsional</small>
-                                    </div>
-                                    <div className="mb-4">
-                                        <label className="form-label fw-semibold">Password</label>
-                                        <input
-                                            type="password"
-                                            className="form-control rounded-pill px-4 py-2"
-                                            placeholder="••••••••"
-                                            value={registerPassword}
-                                            onChange={(e) => setRegisterPassword(e.target.value)}
-                                            required
-                                            disabled={isLoading}
-                                            minLength={6}
-                                        />
-                                        <small className="text-muted">Minimal 6 karakter</small>
-                                    </div>
-                                    <button
-                                        type="submit"
-                                        className="btn btn-primary w-100 rounded-pill py-3 fw-bold"
-                                        disabled={isLoading}
-                                    >
-                                        {isLoading ? (
-                                            <>
-                                                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                                                Memproses...
-                                            </>
-                                        ) : (
-                                            '✨ Daftar Sekarang'
-                                        )}
-                                    </button>
-                                </form>
-                            )}
-                        </div>
-
-                        <div className="modal-footer border-0">
-                            <button
-                                className="btn btn-light rounded-pill px-4"
-                                onClick={() => {
-                                    setShowAuthModal(false);
-                                }}
+                                className={`btn rounded-pill px-4 py-2 flex-grow-1 ${authTab === 'login'
+                                    ? 'btn-primary'
+                                    : 'btn-outline-secondary'
+                                    }`}
+                                onClick={() => handleTabSwitch('login')}
                                 disabled={isLoading}
                             >
-                                Tutup
+                                Login
+                            </button>
+                            <button
+                                className={`btn rounded-pill px-4 py-2 flex-grow-1 ${authTab === 'register'
+                                    ? 'btn-primary'
+                                    : 'btn-outline-secondary'
+                                    }`}
+                                onClick={() => handleTabSwitch('register')}
+                                disabled={isLoading}
+                            >
+                                Register
                             </button>
                         </div>
+
+                        {/* Form Login */}
+                        {authTab === 'login' && (
+                            <form onSubmit={handleLogin}>
+                                <div className="mb-3">
+                                    <label className="form-label fw-semibold">Email</label>
+                                    <input
+                                        type="email"
+                                        className="form-control rounded-pill px-4 py-2"
+                                        placeholder="nama@contoh.com"
+                                        value={loginEmail}
+                                        onChange={(e) => setLoginEmail(e.target.value)}
+                                        required
+                                        disabled={isLoading}
+                                    />
+                                </div>
+                                <div className="mb-4">
+                                    <label className="form-label fw-semibold">Password</label>
+                                    <input
+                                        type="password"
+                                        className="form-control rounded-pill px-4 py-2"
+                                        placeholder="••••••••"
+                                        value={loginPassword}
+                                        onChange={(e) => setLoginPassword(e.target.value)}
+                                        required
+                                        disabled={isLoading}
+                                    />
+                                </div>
+                                <button
+                                    type="submit"
+                                    className="btn btn-primary w-100 rounded-pill py-3 fw-bold"
+                                    disabled={isLoading}
+                                >
+                                    {isLoading ? (
+                                        <>
+                                            <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                            Memproses...
+                                        </>
+                                    ) : (
+                                        '🚀 Masuk'
+                                    )}
+                                </button>
+                            </form>
+                        )}
+
+                        {/* Form Register */}
+                        {authTab === 'register' && (
+                            <form onSubmit={handleRegister}>
+                                <div className="mb-3">
+                                    <label className="form-label fw-semibold">Nama Lengkap</label>
+                                    <input
+                                        type="text"
+                                        className="form-control rounded-pill px-4 py-2"
+                                        placeholder="Nama Anda"
+                                        value={registerName}
+                                        onChange={(e) => setRegisterName(e.target.value)}
+                                        required
+                                        disabled={isLoading}
+                                    />
+                                </div>
+                                <div className="mb-3">
+                                    <label className="form-label fw-semibold">Email</label>
+                                    <input
+                                        type="email"
+                                        className="form-control rounded-pill px-4 py-2"
+                                        placeholder="nama@contoh.com"
+                                        value={registerEmail}
+                                        onChange={(e) => setRegisterEmail(e.target.value)}
+                                        required
+                                        disabled={isLoading}
+                                    />
+                                </div>
+                                <div className="mb-3">
+                                    <label className="form-label fw-semibold">Nomor Handphone</label>
+                                    <input
+                                        type="text"
+                                        className="form-control rounded-pill px-4 py-2"
+                                        placeholder="081234567890"
+                                        value={registerPhone}
+                                        onChange={(e) => setRegisterPhone(e.target.value)}
+                                        disabled={isLoading}
+                                    />
+                                    <small className="text-muted">Opsional</small>
+                                </div>
+                                <div className="mb-4">
+                                    <label className="form-label fw-semibold">Password</label>
+                                    <input
+                                        type="password"
+                                        className="form-control rounded-pill px-4 py-2"
+                                        placeholder="••••••••"
+                                        value={registerPassword}
+                                        onChange={(e) => setRegisterPassword(e.target.value)}
+                                        required
+                                        disabled={isLoading}
+                                        minLength={6}
+                                    />
+                                    <small className="text-muted">Minimal 6 karakter</small>
+                                </div>
+                                <button
+                                    type="submit"
+                                    className="btn btn-primary w-100 rounded-pill py-3 fw-bold"
+                                    disabled={isLoading}
+                                >
+                                    {isLoading ? (
+                                        <>
+                                            <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                            Memproses...
+                                        </>
+                                    ) : (
+                                        '✨ Daftar Sekarang'
+                                    )}
+                                </button>
+                            </form>
+                        )}
+                    </div>
+
+                    <div className="modal-footer border-0">
+                        <button
+                            className="btn btn-light rounded-pill px-4"
+                            onClick={() => {
+                                setShowAuthModal(false);
+                            }}
+                            disabled={isLoading}
+                        >
+                            Tutup
+                        </button>
                     </div>
                 </div>
             </div>
-        </>
-    );
+        </div>
+    </>
+);
 }
