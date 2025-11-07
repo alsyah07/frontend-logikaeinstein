@@ -1,17 +1,28 @@
+// Pada bagian import di paling atas file
 import React, { useState, useEffect } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import axios from 'axios'
 
 export default function DetailMapel() {
-    const { id } = useParams() // Ambil id dari URL parameter
+    const { id } = useParams()
     const navigate = useNavigate()
     const { state } = useLocation()
     const course = state?.course
 
-    // State untuk materi dari API
+    // Sama seperti Index: gunakan state lokal untuk pencarian
+    const [query, setQuery] = useState('')
     const [materiData, setMateriData] = useState([])
     const [isLoadingMateri, setIsLoadingMateri] = useState(false)
     const [selectedMateri, setSelectedMateri] = useState(null)
+
+    // Filter memakai query (case-insensitive), sama pola dengan Index.jsx
+    const filteredMateri = query
+        ? materiData.filter(m =>
+            String(m.judul || m.title || '')
+                .toLowerCase()
+                .includes(query.toLowerCase())
+        )
+        : materiData
 
     const categoryData = {
         Matematika: {
@@ -26,9 +37,7 @@ export default function DetailMapel() {
         },
     }
 
-    // Fetch materi dari API saat component mount atau id berubah
     useEffect(() => {
-      //  alert(id)
         const fetchMateri = async () => {
             if (!id) return
 
@@ -36,14 +45,13 @@ export default function DetailMapel() {
             try {
                 const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/sub_mapel_detail/${id}`)
                 if (response.data.success && response.data.data) {
-                    // Transform data dari API
                     const transformedMateri = response.data.data.map(item => ({
                         id: item.id_sub_detail_mapel,
                         id_sub_detail_mapel: item.id_sub_detail_mapel,
                         id_sub_mapel: item.id_sub_mapel,
                         judul: item.sub_detail_mapel,
                         title: item.tittle || item.sub_detail_mapel,
-                        selesai: false, // Default, bisa disesuaikan jika ada data progress user
+                        selesai: false,
                         status: item.status,
                         created_at: item.created_at,
                         updated_at: item.updated_at
@@ -99,7 +107,6 @@ export default function DetailMapel() {
 
             <main className="flex-grow-1 overflow-auto" style={{ paddingBottom: '80px' }}>
                 <div className="container" style={{ maxWidth: '900px' }}>
-                    {/* Course Header Card */}
                     <div className="card border-0 shadow-sm rounded-4 overflow-hidden mb-4 mt-3">
                         <div className="p-4 text-white" style={{ background: catData.gradient }}>
                             <div className="d-flex align-items-center gap-3 flex-wrap">
@@ -120,15 +127,38 @@ export default function DetailMapel() {
                         </div>
                     </div>
 
-                    {/* Materi List Header */}
                     <div className="mb-3 d-flex align-items-center justify-content-between">
                         <h5 className="fw-bold mb-0">📖 Daftar Materi</h5>
                         <span className="text-muted small">
-                            {isLoadingMateri ? 'Memuat...' : `${materiData.length} materi`}
+                            {isLoadingMateri ? 'Memuat...' : `${filteredMateri.length} materi`}
                         </span>
                     </div>
 
-                    {/* Loading State */}
+                    <div className="mb-3">
+                        <div className="input-group">
+                            <span className="input-group-text bg-white">🔎</span>
+                            <input
+                                type="text"
+                                className="form-control"
+                                placeholder="Cari judul materi..."
+                                value={query}
+                                onChange={(e) => setQuery(e.target.value)}
+                            />
+                            {query && (
+                                <button
+                                    className="btn btn-outline-secondary"
+                                    type="button"
+                                    onClick={() => setQuery('')}
+                                >
+                                    Bersihkan
+                                </button>
+                            )}
+                        </div>
+                        {query && (
+                            <small className="text-muted">Hasil untuk: "{query}"</small>
+                        )}
+                    </div>
+
                     {isLoadingMateri ? (
                         <div className="text-center py-5">
                             <div className="spinner-border text-primary" role="status" style={{ width: '3rem', height: '3rem' }}>
@@ -138,16 +168,15 @@ export default function DetailMapel() {
                         </div>
                     ) : (
                         <>
-                            {/* Materi List */}
                             <div className="list-group shadow-sm rounded-3">
-                                {materiData.map((m, idx) => (
+                                {filteredMateri.map((m, idx) => (
                                     <a
                                         key={m.id}
                                         href="#"
                                         className="list-group-item list-group-item-action d-flex align-items-center gap-3 border-0"
-                                        style={{ 
+                                        style={{
                                             transition: 'all 0.2s ease',
-                                            borderBottom: idx < materiData.length - 1 ? '1px solid #e5e7eb' : 'none'
+                                            borderBottom: idx < filteredMateri.length - 1 ? '1px solid #e5e7eb' : 'none'
                                         }}
                                         data-bs-toggle="modal"
                                         data-bs-target="#materiModal"
@@ -170,12 +199,6 @@ export default function DetailMapel() {
                                         </div>
                                         <div className="flex-grow-1">
                                             <div className="fw-bold" style={{ fontSize: '15px' }}>{m.judul}</div>
-                                            <div className="d-flex align-items-center gap-2 mt-1">
-                                                {/* <small className="text-muted">⏱️ Durasi {m.durasi}</small>
-                                                {m.selesai && (
-                                                    <span className="badge bg-success" style={{ fontSize: '10px' }}>Selesai</span>
-                                                )} */}
-                                            </div>
                                         </div>
                                         <button
                                             className="btn btn-sm rounded-pill px-3 text-white"
@@ -185,32 +208,27 @@ export default function DetailMapel() {
                                                 fontWeight: '600',
                                                 fontSize: '13px'
                                             }}
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#materiModal"
                                             onClick={(e) => {
                                                 e.preventDefault()
                                                 e.stopPropagation()
-                                                setSelectedMateri(m)
                                             }}
                                         >
                                             {m.selesai ? '🔄 Ulangi' : '🚀 Mulai'}
                                         </button>
                                     </a>
                                 ))}
-                                
-                                {/* Empty State */}
-                                {materiData.length === 0 && !isLoadingMateri && (
+
+                                {filteredMateri.length === 0 && !isLoadingMateri && (
                                     <div className="text-center py-5">
                                         <div style={{ fontSize: '64px', marginBottom: '16px' }}>📚</div>
-                                        <h5 className="text-muted">Belum Ada Materi</h5>
-                                        <p className="text-muted small">Materi untuk kursus ini akan segera tersedia</p>
+                                        <h5 className="text-muted">Tidak ada materi yang cocok</h5>
+                                        <p className="text-muted small">Coba gunakan kata kunci lain</p>
                                     </div>
                                 )}
                             </div>
                         </>
                     )}
 
-                    {/* Modal Pilihan Materi */}
                     <div className="modal fade" id="materiModal" tabIndex="-1" aria-labelledby="materiModalLabel" aria-hidden="true">
                         <div className="modal-dialog modal-dialog-centered">
                             <div className="modal-content rounded-4 border-0 shadow-lg">
@@ -228,9 +246,9 @@ export default function DetailMapel() {
                                 <div className="modal-body">
                                     <div className="d-flex flex-column gap-3">
                                         <a
-                                            href={`/video/${selectedMateri?.id_sub_mapel_detail || selectedMateri?.id || '1'}/${selectedMateri?.judul || '1'}`}
+                                            href={`/video/${selectedMateri?.id_sub_detail_mapel || selectedMateri?.id || '1'}/${selectedMateri?.judul || '1'}`}
                                             className="btn btn-outline-primary rounded-pill d-flex align-items-center justify-content-center gap-2 py-3"
-                                             style={{ 
+                                            style={{ 
                                                 borderWidth: '2px',
                                                 fontWeight: '600'
                                             }}
@@ -239,13 +257,12 @@ export default function DetailMapel() {
                                             <span>Lihat Teori</span>
                                         </a>
                                         <a
-                                             href={`/pembahasan/${selectedMateri?.id_sub_mapel_detail || selectedMateri?.id || '1'}/${selectedMateri?.judul || '1'}`}
+                                            href={`/pembahasan/${selectedMateri?.id_sub_detail_mapel || selectedMateri?.id || '1'}/${selectedMateri?.judul || '1'}`}
                                             className="btn btn-outline-primary rounded-pill d-flex align-items-center justify-content-center gap-2 py-3"
                                             style={{ 
                                                 borderWidth: '2px',
                                                 fontWeight: '600'
                                             }}
-                                           
                                         >
                                             <span style={{ fontSize: '20px' }}>🧩</span>
                                             <span>Lihat Pembahasan Soal</span>
