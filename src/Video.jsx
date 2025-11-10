@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react'
+import React, { useRef, useState, useEffect } from 'react'
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import axios from 'axios'
 import Swal from 'sweetalert2'
 
 export default function Video() {
+  const playerRef = useRef(null)
+
   const [currentUser, setCurrentUser] = useState(null);
   const navigate = useNavigate()
   const { state } = useLocation()
@@ -247,8 +249,18 @@ export default function Video() {
     })
 
     setSearchParams({ v: item.id_sub_mapel_detail }, { replace: true })
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+
+    // ✅ Scroll ke atas (khusus mobile)
+    if (window.innerWidth <= 768) {
+      // Beberapa browser mobile menggunakan documentElement, lainnya body
+      const scrollTarget = document.scrollingElement || document.documentElement || document.body
+      scrollTarget.scrollTo({
+        top: 0,
+        behavior: 'smooth',
+      })
+    }
   }
+
 
   const handleVideoLoad = () => {
     setIsVideoLoading(false)
@@ -636,9 +648,10 @@ Terima kasih! 🙏`
             {/* Video Player Column */}
             <div className="col-12 col-lg-8">
               {/* Video Player */}
-              <div className="position-relative rounded-3 shadow-sm overflow-hidden bg-dark" style={{ paddingBottom: '56.25%' }}>
+              <div ref={playerRef} className="position-relative rounded-3 shadow-sm overflow-hidden bg-dark" style={{ paddingBottom: '56.25%' }}>
                 <PlayerContent />
               </div>
+
 
               {/* Video Info */}
               <div className="mt-3">
