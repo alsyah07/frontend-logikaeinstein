@@ -1,4 +1,3 @@
-// Pada bagian import di paling atas file
 import React, { useState, useEffect } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import axios from 'axios'
@@ -9,13 +8,12 @@ export default function DetailMapel() {
     const { state } = useLocation()
     const course = state?.course
 
-    // Sama seperti Index: gunakan state lokal untuk pencarian
     const [query, setQuery] = useState('')
     const [materiData, setMateriData] = useState([])
     const [isLoadingMateri, setIsLoadingMateri] = useState(false)
+    const [showModal, setShowModal] = useState(false)
     const [selectedMateri, setSelectedMateri] = useState(null)
 
-    // Filter memakai query (case-insensitive), sama pola dengan Index.jsx
     const filteredMateri = query
         ? materiData.filter(m =>
             String(m.judul || m.title || '')
@@ -68,6 +66,30 @@ export default function DetailMapel() {
 
         fetchMateri()
     }, [id])
+
+    const handleOpenModal = (materi) => {
+        setSelectedMateri(materi)
+        setShowModal(true)
+    }
+
+    const handleCloseModal = () => {
+        setShowModal(false)
+        setSelectedMateri(null)
+    }
+
+    const handleNavigateToVideo = () => {
+        if (selectedMateri?.id_sub_detail_mapel && selectedMateri?.judul) {
+            handleCloseModal()
+            navigate(`/video/${selectedMateri.id_sub_detail_mapel}/${encodeURIComponent(selectedMateri.judul)}`)
+        }
+    }
+
+    const handleNavigateToPembahasan = () => {
+        if (selectedMateri?.id_sub_detail_mapel && selectedMateri?.judul) {
+            handleCloseModal()
+            navigate(`/pembahasan/${selectedMateri.id_sub_detail_mapel}/${encodeURIComponent(selectedMateri.judul)}`)
+        }
+    }
 
     if (!course) {
         return (
@@ -170,52 +192,43 @@ export default function DetailMapel() {
                         <>
                             <div className="list-group shadow-sm rounded-3">
                                 {filteredMateri.map((m, idx) => (
-                                    <a
+                                    <button
                                         key={m.id}
-                                        href="#"
+                                        type="button"
                                         className="list-group-item list-group-item-action d-flex align-items-center gap-3 border-0"
                                         style={{
                                             transition: 'all 0.2s ease',
                                             borderBottom: idx < filteredMateri.length - 1 ? '1px solid #e5e7eb' : 'none'
                                         }}
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#materiModal"
-                                        onClick={(e) => {
-                                            e.preventDefault()
-                                            setSelectedMateri(m)
-                                        }}
+                                        onClick={() => handleOpenModal(m)}
                                     >
                                         <div
                                             className="d-flex align-items-center justify-content-center rounded-3 flex-shrink-0"
-                                            style={{ 
-                                                width: '48px', 
-                                                height: '48px', 
-                                                background: m.selesai ? '#10b981' : catData.gradient, 
+                                            style={{
+                                                width: '48px',
+                                                height: '48px',
+                                                background: m.selesai ? '#10b981' : catData.gradient,
                                                 color: 'white',
                                                 fontSize: '20px'
                                             }}
                                         >
                                             {m.selesai ? '✅' : '📘'}
                                         </div>
-                                        <div className="flex-grow-1">
+                                        <div className="flex-grow-1 text-start">
                                             <div className="fw-bold" style={{ fontSize: '15px' }}>{m.judul}</div>
                                         </div>
-                                        <button
-                                            className="btn btn-sm rounded-pill px-3 text-white"
-                                            style={{ 
-                                                background: catData.gradient, 
+                                        <span
+                                            className="badge rounded-pill px-3 py-2 text-white"
+                                            style={{
+                                                background: catData.gradient,
                                                 border: 'none',
                                                 fontWeight: '600',
                                                 fontSize: '13px'
                                             }}
-                                            onClick={(e) => {
-                                                e.preventDefault()
-                                                e.stopPropagation()
-                                            }}
                                         >
                                             {m.selesai ? '🔄 Ulangi' : '🚀 Mulai'}
-                                        </button>
-                                    </a>
+                                        </span>
+                                    </button>
                                 ))}
 
                                 {filteredMateri.length === 0 && !isLoadingMateri && (
@@ -228,57 +241,79 @@ export default function DetailMapel() {
                             </div>
                         </>
                     )}
+                </div>
+            </main>
 
-                    <div className="modal fade" id="materiModal" tabIndex="-1" aria-labelledby="materiModalLabel" aria-hidden="true">
+            {/* Modal Custom dengan React State */}
+            {showModal && (
+                <>
+                    <div 
+                        className="modal-backdrop fade show" 
+                        style={{ zIndex: 1040 }}
+                        onClick={handleCloseModal}
+                    ></div>
+                    <div 
+                        className="modal fade show d-block" 
+                        tabIndex="-1" 
+                        style={{ zIndex: 1050 }}
+                    >
                         <div className="modal-dialog modal-dialog-centered">
                             <div className="modal-content rounded-4 border-0 shadow-lg">
                                 <div className="modal-header border-0 pb-0">
                                     <div>
-                                        <h5 className="modal-title fw-bold" id="materiModalLabel">
-                                            {selectedMateri ? selectedMateri.judul : 'Pilih Materi'}
+                                        <h5 className="modal-title fw-bold">
+                                            {selectedMateri?.judul || 'Pilih Materi'}
                                         </h5>
-                                        {selectedMateri && (
-                                            <small className="text-muted">Pilih cara belajar</small>
-                                        )}
+                                        <small className="text-muted">Pilih cara belajar</small>
                                     </div>
-                                    <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    <button 
+                                        type="button" 
+                                        className="btn-close" 
+                                        onClick={handleCloseModal}
+                                    ></button>
                                 </div>
                                 <div className="modal-body">
                                     <div className="d-flex flex-column gap-3">
-                                        <a
-                                            href={`/video/${selectedMateri?.id_sub_detail_mapel || selectedMateri?.id || '1'}/${selectedMateri?.judul || '1'}`}
+                                        <button
+                                            type="button"
                                             className="btn btn-outline-primary rounded-pill d-flex align-items-center justify-content-center gap-2 py-3"
-                                            style={{ 
+                                            style={{
                                                 borderWidth: '2px',
                                                 fontWeight: '600'
                                             }}
+                                            onClick={handleNavigateToVideo}
                                         >
                                             <span>🎬</span>
                                             <span>Lihat Teori</span>
-                                        </a>
-                                        <a
-                                            href={`/pembahasan/${selectedMateri?.id_sub_detail_mapel || selectedMateri?.id || '1'}/${selectedMateri?.judul || '1'}`}
+                                        </button>
+                                        <button
+                                            type="button"
                                             className="btn btn-outline-primary rounded-pill d-flex align-items-center justify-content-center gap-2 py-3"
-                                            style={{ 
+                                            style={{
                                                 borderWidth: '2px',
                                                 fontWeight: '600'
                                             }}
+                                            onClick={handleNavigateToPembahasan}
                                         >
                                             <span style={{ fontSize: '20px' }}>🧩</span>
                                             <span>Lihat Pembahasan Soal</span>
-                                        </a>
+                                        </button>
                                     </div>
                                 </div>
                                 <div className="modal-footer border-0">
-                                    <button type="button" className="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">
+                                    <button 
+                                        type="button" 
+                                        className="btn btn-light rounded-pill px-4" 
+                                        onClick={handleCloseModal}
+                                    >
                                         Tutup
                                     </button>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            </main>
+                </>
+            )}
         </div>
     )
 }
