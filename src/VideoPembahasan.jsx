@@ -388,29 +388,53 @@ export default function VideoPembahasan() {
     try {
       const codeUpperCase = redeemCode.trim().toUpperCase();
       const userId = currentUser.id;
-      
+
       const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/redeem_users`, {
         code_redeem: codeUpperCase,
         id_users: userId
       })
 
-      if (response.data.success) {
+      const { success, code, message } = response.data || {}
+
+      if (success) {
         setShowPayModal(false)
         setRedeemCode('')
 
+        if (code === 200) {
+          await Swal.fire({
+            icon: 'success',
+            title: 'Kode Berhasil Digunakan!',
+            html: `
+              <p class="mb-2">🎉 Selamat! Anda sekarang memiliki akses premium.</p>
+              <p class="text-muted small mb-2">Kode: <strong>${codeUpperCase}</strong></p>
+              <p class="text-success small mb-0">✨ Semua video premium kini dapat diakses!</p>
+            `,
+            confirmButtonColor: '#155ea0',
+            confirmButtonText: 'Mulai Belajar',
+          })
+          window.location.reload()
+        } else if (code === 100) {
+          await Swal.fire({
+            icon: 'warning',
+            title: 'Kode Sudah Digunakan',
+            text: message || 'Code already used by another user',
+            confirmButtonColor: '#155ea0',
+          })
+        } else {
+          await Swal.fire({
+            icon: 'error',
+            title: 'Redeem Gagal',
+            text: message || 'Terjadi kesalahan pada kode redeem.',
+            confirmButtonColor: '#155ea0',
+          })
+        }
+      } else {
         await Swal.fire({
-          icon: 'success',
-          title: 'Kode Berhasil Digunakan!',
-          html: `
-            <p class="mb-2">🎉 Selamat! Anda sekarang memiliki akses premium.</p>
-            <p class="text-muted small mb-2">Kode: <strong>${codeUpperCase}</strong></p>
-            <p class="text-success small mb-0">✨ Semua video premium kini dapat diakses!</p>
-          `,
+          icon: 'error',
+          title: 'Redeem Gagal',
+          text: message || 'Kode redeem tidak valid atau sudah digunakan.',
           confirmButtonColor: '#155ea0',
-          confirmButtonText: 'Mulai Belajar',
         })
-
-        window.location.reload()
       }
     } catch (error) {
       let errorMessage = 'Kode redeem tidak valid atau sudah digunakan.'
