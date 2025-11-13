@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -13,7 +13,7 @@ export default function Index() {
 
     // State untuk categories dari API
     const [categories, setCategories] = useState([]);
-    const [categoriesData, setCategoriesData] = useState([]); // Menyimpan data lengkap mapel
+    const [categoriesData, setCategoriesData] = useState([]);
     const [isLoadingCategories, setIsLoadingCategories] = useState(true);
 
     // State untuk courses dari API
@@ -38,50 +38,17 @@ export default function Index() {
 
     const [savedVideos, setSavedVideos] = useState([]);
 
-    // Hapus satu item riwayat
-    const handleDeleteSavedVideo = (videoId) => {
-        try {
-            const rawUser = localStorage.getItem('user');
-            const user = rawUser ? JSON.parse(rawUser) : null;
-            const userId = user?.id;
-            if (!userId) return;
-
-            const listKey = `saved_videos:${userId}`;
-            const list = JSON.parse(localStorage.getItem(listKey) || '[]') || [];
-            const newList = list.filter(v => String(v.id_sub_mapel_detail) !== String(videoId));
-
-            localStorage.setItem(listKey, JSON.stringify(newList));
-            setSavedVideos(prev => prev.filter(v => String(v.id_sub_mapel_detail) !== String(videoId)));
-        } catch (e) {
-            console.warn('Gagal menghapus riwayat', e);
-        }
-    };
-
-    // Hapus semua riwayat
-    const handleClearAllSavedVideos = () => {
-        try {
-            const rawUser = localStorage.getItem('user');
-            const user = rawUser ? JSON.parse(rawUser) : null;
-            const userId = user?.id;
-            if (!userId) return;
-
-            const listKey = `saved_videos:${userId}`;
-            localStorage.setItem(listKey, JSON.stringify([]));
-            setSavedVideos([]);
-        } catch (e) {
-            console.warn('Gagal mengosongkan riwayat', e);
-        }
-    };
-
     const navigate = useNavigate();
 
     // Inisialisasi channel broadcast untuk logout lintas-tab
     const [logoutChannel, setLogoutChannel] = useState(null);
 
+    // State untuk session polling
+    const sessionPollingRef = useRef(null);
 
+    // ==================== BROADCAST CHANNEL SETUP ====================
     useEffect(() => {
         if (typeof BroadcastChannel === 'undefined') {
-            // Browser tidak mendukung BroadcastChannel
             return;
         }
 
@@ -91,8 +58,7 @@ export default function Index() {
         return () => {
             try {
                 channel.close();
-            } catch (e) { }
-            setLogoutChannel(null);
+            } catch (e) {}
         };
     }, []);
 
@@ -100,23 +66,15 @@ export default function Index() {
 
     // Generate unique device ID
     const generateDeviceId = () => {
-        // Cek apakah sudah ada device ID di localStorage
         let deviceId = localStorage.getItem('device_id');
 
         if (!deviceId) {
-            // Generate device ID baru berdasarkan informasi browser dan waktu
             const userAgent = navigator.userAgent;
             const screenResolution = `${window.screen.width}x${window.screen.height}`;
             const timestamp = Date.now();
             const randomString = Math.random().toString(36).substring(2, 15);
-
-            // Kombinasi untuk membuat ID unik
             const combinedString = `${userAgent}-${screenResolution}-${timestamp}-${randomString}`;
-
-            // Hash sederhana (gunakan btoa untuk encoding)
             deviceId = btoa(combinedString).substring(0, 32);
-
-            // Simpan ke localStorage
             localStorage.setItem('device_id', deviceId);
         }
 
@@ -128,7 +86,25 @@ export default function Index() {
         const userAgent = navigator.userAgent;
         let deviceType = 'Unknown';
         let browserName = 'Unknown';
-        // ... existing code ...
+
+        if (/mobile/i.test(userAgent)) {
+            deviceType = 'Mobile';
+        } else if (/tablet/i.test(userAgent)) {
+            deviceType = 'Tablet';
+        } else {
+            deviceType = 'Desktop';
+        }
+
+        if (userAgent.includes('Chrome')) {
+            browserName = 'Chrome';
+        } else if (userAgent.includes('Firefox')) {
+            browserName = 'Firefox';
+        } else if (userAgent.includes('Safari')) {
+            browserName = 'Safari';
+        } else if (userAgent.includes('Edge')) {
+            browserName = 'Edge';
+        }
+
         return {
             type: deviceType,
             browser: browserName,
@@ -136,30 +112,94 @@ export default function Index() {
         };
     };
 
-    // Cek apakah device ID cocok dengan yang tersimpan di server
-    const fetchPublicIP = async () => {
-        try {
-            const res = await axios.get('https://api.ipify.org?format=json');
-            return res.data?.ip || null;
-        } catch {
+    // ==================== SESSION POLLING FUNCTIONS ====================
+
+    // Start session polling untuk deteksi login dari device lain
+    const startSessionPolling = (userId, deviceId) => {
+        // Clear polling sebelumnya
+        if (sessionPollingRef.current) {
+            clearInterval(sessionPollingRef.current);
+        }
+
+        console.log('🔄 Starting session polling for user:', userId);
+
+        // Polling setiap 10 detik
+        sessionPollingRef.current = setInterval(async () => {
             try {
-                const res2 = await axios.get('https://ipapi.co/json/');
-                return res2.data?.ip || null;
-            } catch (e) {
-                console.error('Error fetching public IP:', e);
-                return null;
+                const response = await axios.get(
+                    `${import.meta.env.VITE_API_BASE_URL}/users/check-session/${userId}`,
+                    {
+                        params: { device_id: deviceId },
+                        withCredentials: true
+                    }
+                );
+
+                if (!response.data.isValid) {
+                    console.log('❌ Session invalid - forcing logout');
+                    handleForceLogout();
+                }
+            } catch (error) {
+                console.error('Session check failed:', error);
+                // Jika error 401 atau 403, session tidak valid
+                if (error.response?.status === 401 || error.response?.status === 403) {
+                    handleForceLogout();
+                }
             }
+        }, 10000); // 10 detik
+    };
+
+    // Stop session polling
+    const stopSessionPolling = () => {
+        if (sessionPollingRef.current) {
+            clearInterval(sessionPollingRef.current);
+            sessionPollingRef.current = null;
+            console.log('⏹️ Session polling stopped');
         }
     };
 
+    // Force logout saat terdeteksi login dari device lain
+    const handleForceLogout = () => {
+        // Stop polling
+        stopSessionPolling();
 
-    // Periodic check untuk device session
+        // Broadcast ke tab lain
+        if (logoutChannel) {
+            try {
+                logoutChannel.postMessage({
+                    type: 'FORCE_LOGOUT',
+                    userId: currentUser?.id
+                });
+            } catch (e) {
+                console.error('Broadcast failed:', e);
+            }
+        }
+
+        // Clear data
+        localStorage.removeItem('user');
+        if (currentUser) {
+            localStorage.removeItem(`user_${currentUser.id}_device`);
+        }
+        setCurrentUser(null);
+        setTab('Home');
+
+        Swal.fire({
+            icon: 'warning',
+            title: 'Sesi Berakhir',
+            text: 'Akun Anda telah login di perangkat lain.',
+            confirmButtonText: 'OK',
+            confirmButtonColor: '#155ea0',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+        });
+    };
+
+    // ==================== BROADCAST CHANNEL LISTENER ====================
     useEffect(() => {
         if (!logoutChannel) return;
 
         const handler = (event) => {
             if (event?.data?.type === 'FORCE_LOGOUT' && currentUser && event.data.userId === currentUser.id) {
-                // Force logout tanpa konfirmasi
+                stopSessionPolling();
                 localStorage.removeItem('user');
                 localStorage.removeItem(`user_${currentUser.id}_device`);
                 setCurrentUser(null);
@@ -186,48 +226,44 @@ export default function Index() {
         };
     }, [logoutChannel, currentUser]);
 
-    // Auto logout jika terdeteksi login dari device lain
-    const handleAutoLogout = () => {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Sesi Berakhir',
-            text: 'Akun Anda telah login di perangkat lain. Anda akan logout dari perangkat ini.',
-            confirmButtonText: 'OK',
-            confirmButtonColor: '#155ea0',
-            allowOutsideClick: false,
-            allowEscapeKey: false,
-        }).then(() => {
-            // Clear user data
-            localStorage.removeItem('user');
-            if (currentUser) {
-                localStorage.removeItem(`user_${currentUser.id}_device`);
+    // ==================== CLEANUP ON UNMOUNT ====================
+    useEffect(() => {
+        return () => {
+            stopSessionPolling();
+        };
+    }, []);
+
+    // ==================== START POLLING WHEN USER LOGGED IN ====================
+    useEffect(() => {
+        if (currentUser) {
+            const deviceId = localStorage.getItem(`user_${currentUser.id}_device`);
+            if (deviceId) {
+                startSessionPolling(currentUser.id, deviceId);
             }
-            setCurrentUser(null);
-            setTab('Home');
-        });
-    };
+        } else {
+            stopSessionPolling();
+        }
 
-    // ==================== END DEVICE TRACKING FUNCTIONS ====================
+        return () => {
+            if (!currentUser) {
+                stopSessionPolling();
+            }
+        };
+    }, [currentUser]);
 
-    // Fetch categories dari API saat component mount
+    // ==================== FETCH CATEGORIES ====================
     useEffect(() => {
         const fetchCategories = async () => {
             try {
                 const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/mapel`);
                 if (response.data.success && response.data.data.length > 0) {
-                    // Simpan data lengkap mapel
                     setCategoriesData(response.data.data);
-
-                    // Extract nama mapel untuk categories
                     const mapelList = response.data.data.map(item => item.mapel);
                     setCategories(mapelList);
-
-                    // Set default category ke yang pertama
                     setCategory(mapelList[0]);
                 }
             } catch (error) {
                 console.error('Error fetching categories:', error);
-                // Fallback ke kategori default jika API gagal
                 setCategories(['Matematika', 'Fisika']);
                 setCategory('Matematika');
             } finally {
@@ -238,12 +274,11 @@ export default function Index() {
         fetchCategories();
     }, []);
 
-    // Fetch courses berdasarkan category yang dipilih
+    // ==================== FETCH COURSES ====================
     useEffect(() => {
         const fetchCourses = async () => {
             if (!category) return;
 
-            // Cari id_mapel berdasarkan nama category
             const selectedMapel = categoriesData.find(item => item.mapel === category);
             if (!selectedMapel) return;
 
@@ -252,14 +287,13 @@ export default function Index() {
                 const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/sub_mapel/${selectedMapel.id_mapel}`);
 
                 if (response.data.success && response.data.data) {
-                    // Transform data dari API ke format yang dibutuhkan
                     const transformedCourses = response.data.data.map(item => ({
                         id: item.id_sub_mapel,
-                        id_sub_mapel: item.id_sub_mapel, // Tambahkan untuk routing
+                        id_sub_mapel: item.id_sub_mapel,
                         title: item.sub_mapel,
                         type_mapel: item.id_working_hours,
                         category: item.mapel,
-                        progress: 0, // Bisa disesuaikan jika ada data progress dari user
+                        progress: 0,
                         rating: parseFloat(item.rating) || 0,
                         students: parseInt(item.members) || 0,
                         modules: parseInt(item.lessons) || 0,
@@ -269,7 +303,6 @@ export default function Index() {
                         date: item.date,
                         kode_mapel: item.kode_mapel
                     }));
-                    console.log("response", transformedCourses)
                     setCourses(transformedCourses);
                 }
             } catch (error) {
@@ -283,20 +316,27 @@ export default function Index() {
         fetchCourses();
     }, [category, categoriesData]);
 
-    // Check localStorage saat component mount dan validasi device
+    // ==================== CHECK USER ON MOUNT ====================
     useEffect(() => {
         const storedUser = localStorage.getItem('user');
         if (storedUser) {
             try {
                 const userData = JSON.parse(storedUser);
-
-                // Validasi device
                 const currentDeviceId = generateDeviceId();
                 const storedDeviceId = localStorage.getItem(`user_${userData.id}_device`);
 
                 if (storedDeviceId && storedDeviceId !== currentDeviceId) {
                     // Device berbeda, logout otomatis
-                    handleAutoLogout();
+                    localStorage.removeItem('user');
+                    localStorage.removeItem(`user_${userData.id}_device`);
+                    
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Sesi Berakhir',
+                        text: 'Akun Anda telah login di perangkat lain.',
+                        confirmButtonText: 'OK',
+                        confirmButtonColor: '#155ea0',
+                    });
                 } else {
                     setCurrentUser(userData);
                 }
@@ -307,6 +347,7 @@ export default function Index() {
         }
     }, []);
 
+    // ==================== LOAD SAVED VIDEOS ====================
     useEffect(() => {
         try {
             const rawUser = localStorage.getItem('user');
@@ -325,25 +366,6 @@ export default function Index() {
                 }
             }
 
-            // Fallback migrasi dari format lama saved_video:{userId}:{videoId}
-            if (list.length === 0 && userId) {
-                const migrated = [];
-                for (let i = 0; i < localStorage.length; i++) {
-                    const key = localStorage.key(i);
-                    if (key && key.startsWith(`saved_video:${userId}:`)) {
-                        const val = localStorage.getItem(key);
-                        try {
-                            const obj = JSON.parse(val);
-                            migrated.push(obj);
-                        } catch { }
-                    }
-                }
-                if (migrated.length) {
-                    localStorage.setItem(listKey, JSON.stringify(migrated));
-                    list = migrated;
-                }
-            }
-
             const results = list.map(obj => ({
                 ...obj,
                 title: obj.courseTitle || obj.judul || obj.title,
@@ -357,58 +379,310 @@ export default function Index() {
                 totalTime: '—',
             }));
 
-            results.sort(
-                (a, b) => new Date(b.savedAt || 0) - new Date(a.savedAt || 0)
-            );
+            results.sort((a, b) => new Date(b.savedAt || 0) - new Date(a.savedAt || 0));
             setSavedVideos(results);
         } catch (e) {
             console.warn('Gagal memuat video tersimpan', e);
         }
-    }, []);
+    }, [currentUser]);
 
-    const riwayatData = [
-        {
-            title: 'Matematika Kelas 7',
-            category: 'Matematika',
-            progress: 80,
-            lastAccessed: '2 jam lalu',
-            totalTime: '12 jam 30 menit',
-            completedModules: 20,
-            totalModules: 25,
-            status: 'Berlangsung'
-        },
-        {
-            title: 'Fisika Kelas 7',
-            category: 'Fisika',
-            progress: 65,
-            lastAccessed: '1 hari lalu',
-            totalTime: '8 jam 15 menit',
-            completedModules: 13,
-            totalModules: 20,
-            status: 'Berlangsung'
-        },
-        {
-            title: 'Matematika Kelas 8',
-            category: 'Matematika',
-            progress: 45,
-            lastAccessed: '3 hari lalu',
-            totalTime: '6 jam 45 menit',
-            completedModules: 10,
-            totalModules: 22,
-            status: 'Berlangsung'
-        },
-        {
-            title: 'Mekanika',
-            category: 'Fisika',
-            progress: 30,
-            lastAccessed: '1 minggu lalu',
-            totalTime: '4 jam 20 menit',
-            completedModules: 7,
-            totalModules: 24,
-            status: 'Berlangsung'
-        },
-    ];
+    // ==================== SAVED VIDEOS HANDLERS ====================
+    const handleDeleteSavedVideo = (videoId) => {
+        try {
+            const rawUser = localStorage.getItem('user');
+            const user = rawUser ? JSON.parse(rawUser) : null;
+            const userId = user?.id;
+            if (!userId) return;
 
+            const listKey = `saved_videos:${userId}`;
+            const list = JSON.parse(localStorage.getItem(listKey) || '[]') || [];
+            const newList = list.filter(v => String(v.id_sub_mapel_detail) !== String(videoId));
+
+            localStorage.setItem(listKey, JSON.stringify(newList));
+            setSavedVideos(prev => prev.filter(v => String(v.id_sub_mapel_detail) !== String(videoId)));
+        } catch (e) {
+            console.warn('Gagal menghapus riwayat', e);
+        }
+    };
+
+    const handleClearAllSavedVideos = () => {
+        try {
+            const rawUser = localStorage.getItem('user');
+            const user = rawUser ? JSON.parse(rawUser) : null;
+            const userId = user?.id;
+            if (!userId) return;
+
+            const listKey = `saved_videos:${userId}`;
+            localStorage.setItem(listKey, JSON.stringify([]));
+            setSavedVideos([]);
+        } catch (e) {
+            console.warn('Gagal mengosongkan riwayat', e);
+        }
+    };
+
+    // ==================== LOGIN HANDLER ====================
+    const handleLogin = async (e) => {
+        e.preventDefault();
+        setIsLoading(true);
+
+        try {
+            // Generate device ID sebelum login
+            const currentDeviceId = generateDeviceId();
+
+            const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/users/login`, {
+                email: loginEmail,
+                password: loginPassword,
+                device_id: currentDeviceId // Kirim device ID ke backend
+            }, { withCredentials: true });
+
+            if (response.data.success) {
+                const userData = response.data.data.user;
+
+                // Cek apakah perlu logout device lain
+                if (response.data.requireLogoutOtherDevice) {
+                    const result = await Swal.fire({
+                        icon: 'warning',
+                        title: 'Login dari Device Lain Terdeteksi',
+                        html: `
+                            <p>Akun <strong>${userData.email}</strong> sedang aktif di perangkat lain.</p>
+                            <p class="text-muted small">Melanjutkan akan logout otomatis dari perangkat tersebut.</p>
+                        `,
+                        showCancelButton: true,
+                        confirmButtonColor: '#155ea0',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: 'Ya, Login di Sini',
+                        cancelButtonText: 'Batal',
+                        reverseButtons: true,
+                    });
+
+                    if (!result.isConfirmed) {
+                        setIsLoading(false);
+                        return;
+                    }
+
+                    // Force logout di device lain via API
+                    await axios.post(`${import.meta.env.VITE_API_BASE_URL}/users/force-logout`, {
+                        user_id: userData.id,
+                        new_device_id: currentDeviceId
+                    });
+                }
+
+                // Simpan device ID dan user data
+                localStorage.setItem(`user_${userData.id}_device`, currentDeviceId);
+                localStorage.setItem('user', JSON.stringify(userData));
+                setCurrentUser(userData);
+
+                // Tutup modal
+                setShowAuthModal(false);
+                setLoginEmail('');
+                setLoginPassword('');
+
+                // Get device info
+                const deviceInfo = getDeviceInfo();
+                console.log('✅ Login successful from device:', {
+                    deviceId: currentDeviceId,
+                    ...deviceInfo
+                });
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Login Berhasil!',
+                    html: `
+                        <p>Selamat datang kembali, <strong>${userData.name}</strong>!</p>
+                        <p class="text-muted small">Login dari: ${deviceInfo.type} - ${deviceInfo.browser}</p>
+                    `,
+                    showConfirmButton: false,
+                    timer: 2500,
+                    timerProgressBar: true,
+                });
+            }
+        } catch (error) {
+            let errorMessage = 'Login gagal. Silakan coba lagi.';
+
+            if (error.response) {
+                errorMessage = error.response.data.message || errorMessage;
+            } else if (error.request) {
+                errorMessage = 'Tidak dapat terhubung ke server. Periksa koneksi Anda.';
+            }
+
+            Swal.fire({
+                icon: 'error',
+                title: 'Login Gagal!',
+                text: errorMessage,
+                confirmButtonText: 'Coba Lagi',
+                confirmButtonColor: '#155ea0',
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // ==================== REGISTER HANDLER ====================
+    const handleRegister = async (e) => {
+        e.preventDefault();
+        setIsLoading(true);
+
+        try {
+            const username = registerEmail.split('@')[0];
+            const tempEmail = registerEmail;
+            const tempPassword = registerPassword;
+
+            const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/users`, {
+                username: username,
+                name: registerName,
+                email: registerEmail,
+                password: registerPassword,
+                id_role: 1,
+                phone: registerPhone || null
+            });
+
+            if (response) {
+                setRegisterName('');
+                setRegisterEmail('');
+                setRegisterPhone('');
+                setRegisterPassword('');
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Registrasi Berhasil!',
+                    text: 'Akun Anda telah berhasil dibuat. Sedang masuk...',
+                    showConfirmButton: false,
+                    timer: 1500,
+                    timerProgressBar: true,
+                });
+
+                // Auto login
+                setTimeout(async () => {
+                    try {
+                        const currentDeviceId = generateDeviceId();
+
+                        const loginResponse = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/users/login`, {
+                            email: tempEmail,
+                            password: tempPassword,
+                            device_id: currentDeviceId
+                        }, { withCredentials: true });
+
+                        if (loginResponse.data.success) {
+                            const userData = loginResponse.data.data.user;
+
+                            localStorage.setItem(`user_${userData.id}_device`, currentDeviceId);
+                            localStorage.setItem('user', JSON.stringify(userData));
+                            setCurrentUser(userData);
+                            setShowAuthModal(false);
+
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Selamat Datang!',
+                                text: `Halo, ${userData.name}! Akun Anda berhasil dibuat dan Anda telah login.`,
+                                showConfirmButton: false,
+                                timer: 2000,
+                                timerProgressBar: true,
+                            });
+                        }
+                    } catch (loginError) {
+                        setAuthTab('login');
+                        setLoginEmail(tempEmail);
+
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Silakan Login Manual',
+                            text: 'Registrasi berhasil, tetapi gagal login otomatis. Silakan login manual.',
+                            confirmButtonText: 'OK',
+                            confirmButtonColor: '#155ea0',
+                        });
+                    } finally {
+                        setIsLoading(false);
+                    }
+                }, 1500);
+            }
+        } catch (error) {
+            let errorMessage = 'Registrasi gagal. Silakan coba lagi.';
+
+            if (error.response) {
+                if (error.response.status === 400 || error.response.status === 409) {
+                    errorMessage = 'Email sudah terdaftar. Gunakan email lain.';
+                } else {
+                    errorMessage = error.response.data.message || errorMessage;
+                }
+            } else if (error.request) {
+                errorMessage = 'Tidak dapat terhubung ke server. Periksa koneksi Anda.';
+            }
+
+            Swal.fire({
+                icon: 'error',
+                title: 'Registrasi Gagal!',
+                text: errorMessage,
+                confirmButtonText: 'Coba Lagi',
+                confirmButtonColor: '#155ea0',
+            });
+
+            setIsLoading(false);
+        }
+    };
+
+    // ==================== LOGOUT HANDLER ====================
+    const handleLogout = async () => {
+        const result = await Swal.fire({
+            title: 'Keluar dari Akun?',
+            text: 'Apakah Anda yakin ingin keluar?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#155ea0',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Ya, Keluar',
+            cancelButtonText: 'Batal',
+            reverseButtons: true,
+        });
+
+        if (result.isConfirmed) {
+            try {
+                // Logout via API
+                if (currentUser) {
+                    await axios.post(`${import.meta.env.VITE_API_BASE_URL}/users/logout`, {
+                        user_id: currentUser.id
+                    });
+                }
+            } catch (error) {
+                console.error('Logout API failed:', error);
+            }
+
+            // Stop polling
+            stopSessionPolling();
+
+            // Clear device ID
+            if (currentUser) {
+                localStorage.removeItem(`user_${currentUser.id}_device`);
+            }
+
+            localStorage.removeItem('user');
+            setCurrentUser(null);
+            setTab('Home');
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Berhasil Keluar',
+                text: 'Anda telah keluar dari akun.',
+                showConfirmButton: false,
+                timer: 1500,
+                timerProgressBar: true,
+            });
+        }
+    };
+
+    // ==================== OTHER HANDLERS ====================
+    const handleTabSwitch = (newTab) => {
+        setAuthTab(newTab);
+    };
+
+    const handleCourseClick = (course) => {
+        if (course.type_mapel == 0) {
+            navigate(`/detail-mapel/${course.id_sub_mapel}`, { state: { course } });
+        } else if (course.type_mapel == 1) {
+            navigate(`/video/${course.id_sub_mapel}/${course.title}`, { state: { course } });
+        }
+    };
+
+    // ==================== DATA & FILTERS ====================
     const filtered = courses.filter((c) => {
         const matchCat = c.category === category;
         const matchQuery = c.title.toLowerCase().includes(query.toLowerCase());
@@ -431,6 +705,7 @@ export default function Index() {
             lightGradient: 'linear-gradient(135deg,  #2e6ca9 0%, #9dc6f4ff 100%)'
         },
     };
+
 
     const styles = `
     @keyframes slideUp {
@@ -526,62 +801,7 @@ export default function Index() {
   `;
 
     // Handler untuk login DENGAN DEVICE TRACKING
-    const handleLogin = async (e) => {
-        e.preventDefault();
-        setIsLoading(true);
-
-        try {
-            const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/users/login`, {
-                email: loginEmail,
-                password: loginPassword
-            }, { withCredentials: true });
-
-            if (response.data.success) {
-                const userData = response.data.data.user;
-
-                // Generate dan simpan device ID
-                const currentDeviceId = generateDeviceId();
-                const storedDeviceId = localStorage.getItem(`user_${userData.id}_device`);
-
-                // Cek apakah user sudah login di device lain
-                if (storedDeviceId && storedDeviceId !== currentDeviceId) {
-                    // ... existing code ...
-                }
-
-                // Simpan device ID untuk user ini
-                localStorage.setItem(`user_${userData.id}_device`, currentDeviceId);
-
-                // Ambil dan simpan IP publik saat login
-                const currentIP = await fetchPublicIP();
-                if (currentIP) {
-                    localStorage.setItem(`user_${userData.id}_ip`, currentIP);
-                }
-
-                // Get device info untuk logging
-                const deviceInfo = getDeviceInfo();
-                console.log('Login from device:', {
-                    deviceId: currentDeviceId,
-                    ip: currentIP || 'unknown',
-                    ...deviceInfo
-                });
-
-                // Simpan data user ke localStorage
-                localStorage.setItem('user', JSON.stringify(userData));
-                setCurrentUser(userData);
-
-                // Tutup modal
-                setShowAuthModal(false);
-                setLoginEmail('');
-                setLoginPassword('');
-
-                // ... existing code ...
-            }
-        } catch (error) {
-            // ... existing code ...
-        } finally {
-            setIsLoading(false);
-        }
-    };
+    
 
     useEffect(() => {
         const checkSession = async () => {
@@ -622,169 +842,7 @@ export default function Index() {
     }, []);
 
     // Handler untuk register dengan auto login DAN DEVICE TRACKING
-    const handleRegister = async (e) => {
-        e.preventDefault();
-        setIsLoading(true);
-
-        try {
-            // Generate username dari email (ambil bagian sebelum @)
-            const username = registerEmail.split('@')[0];
-
-            // Simpan email dan password untuk auto login
-            const tempEmail = registerEmail;
-            const tempPassword = registerPassword;
-
-            const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/users`, {
-                username: username,
-                name: registerName,
-                email: registerEmail,
-                password: registerPassword,
-                id_role: 1, // Role default untuk user biasa
-                phone: registerPhone || null // Gunakan phone dari form atau null
-            });
-
-            if (response) {
-                // Reset form
-                setRegisterName('');
-                setRegisterEmail('');
-                setRegisterPhone('');
-                setRegisterPassword('');
-
-                // Sweet Alert Success dengan timer
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Registrasi Berhasil!',
-                    text: 'Akun Anda telah berhasil dibuat. Sedang masuk...',
-                    showConfirmButton: false,
-                    timer: 1500,
-                    timerProgressBar: true,
-                });
-
-                // Auto login setelah delay
-                setTimeout(async () => {
-                    try {
-                        const loginResponse = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/users/login`, {
-                            email: tempEmail,
-                            password: tempPassword
-                        }, { withCredentials: true });
-
-                        if (loginResponse.data.success) {
-                            const userData = loginResponse.data.data.user;
-
-                            // Generate dan simpan device ID untuk user baru
-                            const currentDeviceId = generateDeviceId();
-                            localStorage.setItem(`user_${userData.id}_device`, currentDeviceId);
-
-                            // Simpan data user ke localStorage
-                            localStorage.setItem('user', JSON.stringify(userData));
-                            setCurrentUser(userData);
-
-                            // Tutup modal
-                            setShowAuthModal(false);
-
-                            // Sweet Alert Welcome
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Selamat Datang!',
-                                text: `Halo, ${userData.name}! Akun Anda berhasil dibuat dan Anda telah login.`,
-                                showConfirmButton: false,
-                                timer: 2000,
-                                timerProgressBar: true,
-                            });
-                        }
-                    } catch (loginError) {
-                        // Jika auto login gagal, arahkan ke tab login
-                        setAuthTab('login');
-                        setLoginEmail(tempEmail);
-
-                        Swal.fire({
-                            icon: 'warning',
-                            title: 'Silakan Login Manual',
-                            text: 'Registrasi berhasil, tetapi gagal login otomatis. Silakan login manual.',
-                            confirmButtonText: 'OK',
-                            confirmButtonColor: '#155ea0',
-                        });
-                    } finally {
-                        setIsLoading(false);
-                    }
-                }, 1500);
-            }
-        } catch (error) {
-            let errorMessage = 'Registrasi gagal. Silakan coba lagi.';
-
-            if (error.response) {
-                // Cek jika error duplicate email atau username
-                if (error.response.status === 400 || error.response.status === 409) {
-                    errorMessage = 'Email sudah terdaftar. Gunakan email lain.';
-                } else {
-                    errorMessage = error.response.data.message || errorMessage;
-                }
-            } else if (error.request) {
-                errorMessage = 'Tidak dapat terhubung ke server. Periksa koneksi Anda.';
-            }
-
-            // Sweet Alert Error
-            Swal.fire({
-                icon: 'error',
-                title: 'Registrasi Gagal!',
-                text: errorMessage,
-                confirmButtonText: 'Coba Lagi',
-                confirmButtonColor: '#155ea0',
-            });
-
-            setIsLoading(false);
-        }
-    };
-
-    // Handler untuk logout DENGAN CLEAR DEVICE ID
-    const handleLogout = () => {
-        Swal.fire({
-            title: 'Keluar dari Akun?',
-            text: 'Apakah Anda yakin ingin keluar?',
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonColor: '#155ea0',
-            cancelButtonColor: '#d33',
-            confirmButtonText: 'Ya, Keluar',
-            cancelButtonText: 'Batal',
-            reverseButtons: true,
-        }).then((result) => {
-            if (result.isConfirmed) {
-                // Clear device ID & IP
-                if (currentUser) {
-                    localStorage.removeItem(`user_${currentUser.id}_device`);
-                    localStorage.removeItem(`user_${currentUser.id}_ip`);
-                }
-
-                localStorage.removeItem('user');
-                setCurrentUser(null);
-                setTab('Home');
-
-                // ... existing code ...
-            }
-        });
-    };
-
-
-    // Reset pesan saat ganti tab
-    const handleTabSwitch = (newTab) => {
-        setAuthTab(newTab);
-    };
-
-    // Handler untuk navigate ke detail mapel - TANPA ALERT LOGIN (dipindah ke Video/Pembahasan)
-    const handleCourseClick = (course) => {
-        console.log("course", course.type_mapel);
-        // Halaman Video/Pembahasan akan menangani alert login jika user belum login
-        if (course.type_mapel == 0) {
-            navigate(`/detail-mapel/${course.id_sub_mapel}`, {
-                state: { course }
-            });
-        } else if (course.type_mapel == 1) {
-            navigate(`/video/${course.id_sub_mapel}/${course.title}`, {
-                state: { course }
-            });
-        }
-    };
+   
 
     const renderContent = () => {
         if (tab === 'Home') {
