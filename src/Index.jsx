@@ -91,7 +91,7 @@ export default function Index() {
         return () => {
             try {
                 channel.close();
-            } catch (e) {}
+            } catch (e) { }
             setLogoutChannel(null);
         };
     }, []);
@@ -128,51 +128,30 @@ export default function Index() {
         const userAgent = navigator.userAgent;
         let deviceType = 'Unknown';
         let browserName = 'Unknown';
-
-        // Detect device type
-        if (/mobile/i.test(userAgent)) {
-            deviceType = 'Mobile';
-        } else if (/tablet/i.test(userAgent)) {
-            deviceType = 'Tablet';
-        } else {
-            deviceType = 'Desktop';
-        }
-
-        // Detect browser
-        if (userAgent.includes('Chrome')) {
-            browserName = 'Chrome';
-        } else if (userAgent.includes('Firefox')) {
-            browserName = 'Firefox';
-        } else if (userAgent.includes('Safari')) {
-            browserName = 'Safari';
-        } else if (userAgent.includes('Edge')) {
-            browserName = 'Edge';
-        }
-
+        // ... existing code ...
         return {
             type: deviceType,
             browser: browserName,
-            userAgent: userAgent.substring(0, 100) // Limit length
+            userAgent: userAgent.substring(0, 100)
         };
     };
 
     // Cek apakah device ID cocok dengan yang tersimpan di server
-    const checkDeviceSession = async (userId, currentDeviceId) => {
+    const fetchPublicIP = async () => {
         try {
-            // Ambil device ID yang tersimpan untuk user ini
-            const storedDeviceId = localStorage.getItem(`user_${userId}_device`);
-
-            if (storedDeviceId && storedDeviceId !== currentDeviceId) {
-                // Device berbeda terdeteksi
-                return false;
+            const res = await axios.get('https://api.ipify.org?format=json');
+            return res.data?.ip || null;
+        } catch {
+            try {
+                const res2 = await axios.get('https://ipapi.co/json/');
+                return res2.data?.ip || null;
+            } catch (e) {
+                console.error('Error fetching public IP:', e);
+                return null;
             }
-
-            return true;
-        } catch (error) {
-            console.error('Error checking device session:', error);
-            return true; // Jika error, biarkan user tetap login
         }
     };
+
 
     // Periodic check untuk device session
     useEffect(() => {
@@ -566,35 +545,23 @@ export default function Index() {
 
                 // Cek apakah user sudah login di device lain
                 if (storedDeviceId && storedDeviceId !== currentDeviceId) {
-                    // Konfirmasi logout device lain
-                    const result = await Swal.fire({
-                        icon: 'warning',
-                        title: 'Login dari Device Lain',
-                        html: `
-                            <p>Akun ini sedang aktif di perangkat lain.</p>
-                            <p class="text-muted small">Melanjutkan akan logout dari perangkat tersebut.</p>
-                        `,
-                        showCancelButton: true,
-                        confirmButtonColor: '#155ea0',
-                        cancelButtonColor: '#6c757d',
-                        confirmButtonText: 'Ya, Login di Sini',
-                        cancelButtonText: 'Batal',
-                        reverseButtons: true,
-                    });
-
-                    if (!result.isConfirmed) {
-                        setIsLoading(false);
-                        return;
-                    }
+                    // ... existing code ...
                 }
 
                 // Simpan device ID untuk user ini
                 localStorage.setItem(`user_${userData.id}_device`, currentDeviceId);
 
+                // Ambil dan simpan IP publik saat login
+                const currentIP = await fetchPublicIP();
+                if (currentIP) {
+                    localStorage.setItem(`user_${userData.id}_ip`, currentIP);
+                }
+
                 // Get device info untuk logging
                 const deviceInfo = getDeviceInfo();
                 console.log('Login from device:', {
                     deviceId: currentDeviceId,
+                    ip: currentIP || 'unknown',
                     ...deviceInfo
                 });
 
@@ -607,40 +574,52 @@ export default function Index() {
                 setLoginEmail('');
                 setLoginPassword('');
 
-                // Sweet Alert Success
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Login Berhasil!',
-                    html: `
-                        <p>Selamat datang kembali, <strong>${userData.name}</strong>!</p>
-                        <p class="text-muted small">Login dari: ${deviceInfo.type} - ${deviceInfo.browser}</p>
-                    `,
-                    showConfirmButton: false,
-                    timer: 2500,
-                    timerProgressBar: true,
-                });
+                // ... existing code ...
             }
         } catch (error) {
-            let errorMessage = 'Login gagal. Silakan coba lagi.';
-
-            if (error.response) {
-                errorMessage = error.response.data.message || errorMessage;
-            } else if (error.request) {
-                errorMessage = 'Tidak dapat terhubung ke server. Periksa koneksi Anda.';
-            }
-
-            // Sweet Alert Error
-            Swal.fire({
-                icon: 'error',
-                title: 'Login Gagal!',
-                text: errorMessage,
-                confirmButtonText: 'Coba Lagi',
-                confirmButtonColor: '#155ea0',
-            });
+            // ... existing code ...
         } finally {
             setIsLoading(false);
         }
     };
+
+    useEffect(() => {
+        const checkSession = async () => {
+            const storedUser = localStorage.getItem('user');
+            if (storedUser) {
+                try {
+                    const userData = JSON.parse(storedUser);
+
+                    // Validasi device ID
+                    const currentDeviceId = generateDeviceId();
+                    const storedDeviceId = localStorage.getItem(`user_${userData.id}_device`);
+
+                    if (storedDeviceId && storedDeviceId !== currentDeviceId) {
+                        // Device berbeda, logout otomatis
+                        handleAutoLogout();
+                        return;
+                    }
+
+                    // Validasi IP publik
+                    const currentIP = await fetchPublicIP();
+                    const storedIP = localStorage.getItem(`user_${userData.id}_ip`);
+
+                    if (storedIP && currentIP && storedIP !== currentIP) {
+                        // IP berubah, anggap login dari jaringan/perangkat lain
+                        handleAutoLogout();
+                        return;
+                    }
+
+                    setCurrentUser(userData);
+                } catch (error) {
+                    console.error('Error parsing user data:', error);
+                    localStorage.removeItem('user');
+                }
+            }
+        };
+
+        checkSession();
+    }, []);
 
     // Handler untuk register dengan auto login DAN DEVICE TRACKING
     const handleRegister = async (e) => {
@@ -771,26 +750,21 @@ export default function Index() {
             reverseButtons: true,
         }).then((result) => {
             if (result.isConfirmed) {
-                // Clear device ID
+                // Clear device ID & IP
                 if (currentUser) {
                     localStorage.removeItem(`user_${currentUser.id}_device`);
+                    localStorage.removeItem(`user_${currentUser.id}_ip`);
                 }
 
                 localStorage.removeItem('user');
                 setCurrentUser(null);
                 setTab('Home');
 
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Berhasil Keluar',
-                    text: 'Anda telah keluar dari akun.',
-                    showConfirmButton: false,
-                    timer: 1500,
-                    timerProgressBar: true,
-                });
+                // ... existing code ...
             }
         });
     };
+
 
     // Reset pesan saat ganti tab
     const handleTabSwitch = (newTab) => {
@@ -1691,8 +1665,7 @@ export default function Index() {
                                         {isLoading ? (
                                             <>
                                                 <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                                                Memproses...
-                                            </>
+                                                Memproses...                                            </>
                                         ) : (
                                             '✨ Daftar Sekarang'
                                         )}
