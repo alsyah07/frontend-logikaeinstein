@@ -401,6 +401,7 @@ export default function Index() {
 
                 const storedUser = JSON.parse(storedUserRaw);
 
+                // Panggil API cek sesi sesuai user_id
                 const res = await axios.get(
                     `${import.meta.env.VITE_API_BASE_URL}/cek_session/${storedUser.id}`,
                     { withCredentials: true }
@@ -417,8 +418,13 @@ export default function Index() {
                     const active = session.active === '1' || session.active === 1 || session.active === true;
 
                     if (!active || !deviceMatch || !ipMatch) {
-                        // Langsung logout tanpa alert
-                        localStorage.removeItem('user');
+                        await Swal.fire({
+                            icon: 'warning',
+                            title: 'Sesi di Perangkat Lain',
+                            text: 'Akun Anda masih terhubung ke perangkat berbeda. Anda akan logout dari perangkat ini.',
+                            confirmButtonText: 'OK'
+                        });
+                     localStorage.removeItem('user');
                         localStorage.removeItem('session');
                         if (storedUser?.id) {
                             localStorage.removeItem(`user_${storedUser.id}_device`);
