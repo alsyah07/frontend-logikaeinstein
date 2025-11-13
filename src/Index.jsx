@@ -91,7 +91,7 @@ export default function Index() {
         return () => {
             try {
                 channel.close();
-            } catch (e) {}
+            } catch (e) { }
             setLogoutChannel(null);
         };
     }, []);
@@ -286,27 +286,35 @@ export default function Index() {
         fetchCourses();
     }, [category, categoriesData]);
 
-    // Check localStorage saat component mount dan validasi device
+    // Check localStorage saat component mount dan validasi device UUID (single-device)
     useEffect(() => {
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-            try {
-                const userData = JSON.parse(storedUser);
+        const storedUserRaw = localStorage.getItem('user');
+        if (!storedUserRaw) return;
 
-                // Validasi device
-                const currentDeviceId = generateDeviceId();
-                const storedDeviceId = localStorage.getItem(`user_${userData.id}_device`);
+        try {
+            const userData = JSON.parse(storedUserRaw);
+            const currentDeviceId = generateDeviceId();
 
-                if (storedDeviceId && storedDeviceId !== currentDeviceId) {
-                    // Device berbeda, logout otomatis
-                    handleAutoLogout();
-                } else {
-                    setCurrentUser(userData);
-                }
-            } catch (error) {
-                console.error('Error parsing user data:', error);
-                localStorage.removeItem('user');
+            // Validasi dengan UUID dari server yang tersimpan di userData
+            const serverDeviceId = userData.device_uuid || userData.deviceId || null;
+            if (serverDeviceId && serverDeviceId !== currentDeviceId) {
+                // UUID berbeda -> anggap sesi di perangkat lain aktif, lakukan auto logout
+                handleAutoLogout();
+                return;
             }
+
+            // Fallback ke mekanisme lama (local storage) jika field server belum tersedia
+            const storedDeviceId = localStorage.getItem(`user_${userData.id}_device`);
+            if (storedDeviceId && storedDeviceId !== currentDeviceId) {
+                handleAutoLogout();
+                return;
+            }
+
+            // Validasi lolos -> set user
+            setCurrentUser(userData);
+        } catch (error) {
+            console.error('Error parsing user data:', error);
+            localStorage.removeItem('user');
         }
     }, []);
 
@@ -528,101 +536,82 @@ export default function Index() {
     }
   `;
 
-    // Handler untuk login DENGAN DEVICE TRACKING
+    // Handler untuk login DENGAN DEVICE TRACKING (single-device menggunakan UUID dari database)
     const handleLogin = async (e) => {
         e.preventDefault();
         setIsLoading(true);
 
         try {
-            const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/users/login`, {
-                email: loginEmail,
-                password: loginPassword
-            }, { withCredentials: true });
+            // 1. Ambil deviceId & IP address
+            const deviceId = generateDeviceId();
+            const ipAddress = await getPublicIP();
+            const deviceInfo = getDeviceInfo();
+
+            // 2. Kirim ke backend
+            const response = await axios.post(
+                `${import.meta.env.VITE_API_BASE_URL}/users/login`,
+                {
+                    email: loginEmail,
+                    password: loginPassword,
+                    deviceId: deviceId,
+                    ipAddress: ipAddress
+                }
+            );
 
             if (response.data.success) {
                 const userData = response.data.data.user;
+                const sessionData = response.data.data.session;
 
-                // Generate dan simpan device ID
-                const currentDeviceId = generateDeviceId();
-                const storedDeviceId = localStorage.getItem(`user_${userData.id}_device`);
+                // 3. Simpan user dan session ke localStorage
+                localStorage.setItem("user", JSON.stringify(userData));
+                localStorage.setItem("session", JSON.stringify(sessionData));
 
-                // Cek apakah user sudah login di device lain
-                if (storedDeviceId && storedDeviceId !== currentDeviceId) {
-                    // Konfirmasi logout device lain
-                    const result = await Swal.fire({
-                        icon: 'warning',
-                        title: 'Login dari Device Lain',
-                        html: `
-                            <p>Akun ini sedang aktif di perangkat lain.</p>
-                            <p class="text-muted small">Melanjutkan akan logout dari perangkat tersebut.</p>
-                        `,
-                        showCancelButton: true,
-                        confirmButtonColor: '#155ea0',
-                        cancelButtonColor: '#6c757d',
-                        confirmButtonText: 'Ya, Login di Sini',
-                        cancelButtonText: 'Batal',
-                        reverseButtons: true,
-                    });
-
-                    if (!result.isConfirmed) {
-                        setIsLoading(false);
-                        return;
-                    }
-                }
-
-                // Simpan device ID untuk user ini
-                localStorage.setItem(`user_${userData.id}_device`, currentDeviceId);
-
-                // Get device info untuk logging
-                const deviceInfo = getDeviceInfo();
-                console.log('Login from device:', {
-                    deviceId: currentDeviceId,
-                    ...deviceInfo
-                });
-
-                // Simpan data user ke localStorage
-                localStorage.setItem('user', JSON.stringify(userData));
                 setCurrentUser(userData);
 
-                // Tutup modal
+                // 4. Reset form dan tutup modal
                 setShowAuthModal(false);
-                setLoginEmail('');
-                setLoginPassword('');
+                setLoginEmail("");
+                setLoginPassword("");
 
-                // Sweet Alert Success
+                // 5. SweetAlert sukses
                 Swal.fire({
-                    icon: 'success',
-                    title: 'Login Berhasil!',
+                    icon: "success",
+                    title: "Login Berhasil!",
                     html: `
-                        <p>Selamat datang kembali, <strong>${userData.name}</strong>!</p>
-                        <p class="text-muted small">Login dari: ${deviceInfo.type} - ${deviceInfo.browser}</p>
-                    `,
+                    <p>Selamat datang kembali, <strong>${userData.name}</strong>!</p>
+                    <p class="text-muted small">
+                        Login dari: ${deviceInfo.type} - ${deviceInfo.browser}<br>
+                        Device ID: <strong>${deviceId}</strong>
+                    </p>
+                `,
                     showConfirmButton: false,
                     timer: 2500,
-                    timerProgressBar: true,
+                    timerProgressBar: true
                 });
+
+                console.log("SESSION CREATED:", sessionData);
             }
         } catch (error) {
-            let errorMessage = 'Login gagal. Silakan coba lagi.';
+            let errorMessage = "Login gagal. Silakan coba lagi.";
 
             if (error.response) {
                 errorMessage = error.response.data.message || errorMessage;
             } else if (error.request) {
-                errorMessage = 'Tidak dapat terhubung ke server. Periksa koneksi Anda.';
+                errorMessage = "Tidak dapat terhubung ke server. Periksa koneksi Anda.";
             }
 
-            // Sweet Alert Error
             Swal.fire({
-                icon: 'error',
-                title: 'Login Gagal!',
+                icon: "error",
+                title: "Login Gagal!",
                 text: errorMessage,
-                confirmButtonText: 'Coba Lagi',
-                confirmButtonColor: '#155ea0',
+                confirmButtonText: "Coba Lagi",
+                confirmButtonColor: "#155ea0"
             });
         } finally {
             setIsLoading(false);
         }
     };
+
 
     // Handler untuk register dengan auto login DAN DEVICE TRACKING
     const handleRegister = async (e) => {
@@ -630,21 +619,25 @@ export default function Index() {
         setIsLoading(true);
 
         try {
-            // Generate username dari email (ambil bagian sebelum @)
+            // Generate username dari email
             const username = registerEmail.split('@')[0];
 
-            // Simpan email dan password untuk auto login
+            // Simpan temp cred untuk auto login
             const tempEmail = registerEmail;
             const tempPassword = registerPassword;
 
-            const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/users`, {
-                username: username,
-                name: registerName,
-                email: registerEmail,
-                password: registerPassword,
-                id_role: 1, // Role default untuk user biasa
-                phone: registerPhone || null // Gunakan phone dari form atau null
-            });
+            // Register user
+            const response = await axios.post(
+                `${import.meta.env.VITE_API_BASE_URL}/users`,
+                {
+                    username: username,
+                    name: registerName,
+                    email: registerEmail,
+                    password: registerPassword,
+                    id_role: 1,
+                    phone: registerPhone || null
+                }
+            );
 
             if (response) {
                 // Reset form
@@ -653,7 +646,6 @@ export default function Index() {
                 setRegisterPhone('');
                 setRegisterPassword('');
 
-                // Sweet Alert Success dengan timer
                 Swal.fire({
                     icon: 'success',
                     title: 'Registrasi Berhasil!',
@@ -663,29 +655,33 @@ export default function Index() {
                     timerProgressBar: true,
                 });
 
-                // Auto login setelah delay
+                // AUTO LOGIN
                 setTimeout(async () => {
                     try {
-                        const loginResponse = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/users/login`, {
-                            email: tempEmail,
-                            password: tempPassword
-                        }, { withCredentials: true });
+                        const deviceId = generateDeviceId();
+                        const ipAddress = await getPublicIP();
+
+                        const loginResponse = await axios.post(
+                            `${import.meta.env.VITE_API_BASE_URL}/users/login`,
+                            {
+                                email: tempEmail,
+                                password: tempPassword,
+                                deviceId: deviceId,
+                                ipAddress: ipAddress
+                            }
+                        );
 
                         if (loginResponse.data.success) {
                             const userData = loginResponse.data.data.user;
+                            const sessionData = loginResponse.data.data.session;
 
-                            // Generate dan simpan device ID untuk user baru
-                            const currentDeviceId = generateDeviceId();
-                            localStorage.setItem(`user_${userData.id}_device`, currentDeviceId);
+                            // Simpan user dan session
+                            localStorage.setItem("user", JSON.stringify(userData));
+                            localStorage.setItem("session", JSON.stringify(sessionData));
 
-                            // Simpan data user ke localStorage
-                            localStorage.setItem('user', JSON.stringify(userData));
                             setCurrentUser(userData);
-
-                            // Tutup modal
                             setShowAuthModal(false);
 
-                            // Sweet Alert Welcome
                             Swal.fire({
                                 icon: 'success',
                                 title: 'Selamat Datang!',
@@ -696,14 +692,14 @@ export default function Index() {
                             });
                         }
                     } catch (loginError) {
-                        // Jika auto login gagal, arahkan ke tab login
+                        // Kalau auto login gagal
                         setAuthTab('login');
                         setLoginEmail(tempEmail);
 
                         Swal.fire({
                             icon: 'warning',
                             title: 'Silakan Login Manual',
-                            text: 'Registrasi berhasil, tetapi gagal login otomatis. Silakan login manual.',
+                            text: 'Registrasi berhasil, tetapi gagal login otomatis.',
                             confirmButtonText: 'OK',
                             confirmButtonColor: '#155ea0',
                         });
@@ -716,17 +712,15 @@ export default function Index() {
             let errorMessage = 'Registrasi gagal. Silakan coba lagi.';
 
             if (error.response) {
-                // Cek jika error duplicate email atau username
                 if (error.response.status === 400 || error.response.status === 409) {
                     errorMessage = 'Email sudah terdaftar. Gunakan email lain.';
                 } else {
                     errorMessage = error.response.data.message || errorMessage;
                 }
             } else if (error.request) {
-                errorMessage = 'Tidak dapat terhubung ke server. Periksa koneksi Anda.';
+                errorMessage = 'Tidak dapat terhubung ke server.';
             }
 
-            // Sweet Alert Error
             Swal.fire({
                 icon: 'error',
                 title: 'Registrasi Gagal!',
@@ -738,6 +732,7 @@ export default function Index() {
             setIsLoading(false);
         }
     };
+
 
     // Handler untuk logout DENGAN CLEAR DEVICE ID
     const handleLogout = () => {
