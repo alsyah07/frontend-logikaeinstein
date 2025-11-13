@@ -91,7 +91,7 @@ export default function Index() {
         return () => {
             try {
                 channel.close();
-            } catch (e) { }
+            } catch (e) {}
             setLogoutChannel(null);
         };
     }, []);
@@ -286,35 +286,34 @@ export default function Index() {
         fetchCourses();
     }, [category, categoriesData]);
 
-    // Check localStorage saat component mount dan validasi device UUID (single-device)
+    // Check localStorage saat component mount dan validasi device
     useEffect(() => {
-        const storedUserRaw = localStorage.getItem('user');
-        if (!storedUserRaw) return;
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+            try {
+                const userData = JSON.parse(storedUser);
 
-        try {
-            const userData = JSON.parse(storedUserRaw);
-            const currentDeviceId = generateDeviceId();
+                // Validasi device
+                const currentDeviceId = generateDeviceId();
 
-            // Validasi dengan UUID dari server yang tersimpan di userData
-            const serverDeviceId = userData.device_uuid || userData.deviceId || null;
-            if (serverDeviceId && serverDeviceId !== currentDeviceId) {
-                // UUID berbeda -> anggap sesi di perangkat lain aktif, lakukan auto logout
-                handleAutoLogout();
-                return;
+                // UUID perangkat dari server (jika tersedia di user data)
+                const serverDeviceId = userData.device_uuid || userData.deviceId || null;
+
+                // Fallback lama dari localStorage
+                const fallbackDeviceId = localStorage.getItem(`user_${userData.id}_device`);
+
+                // Jika server punya UUID dan berbeda dengan perangkat saat ini -> logout
+                // Jika server belum punya UUID, gunakan fallback untuk validasi
+                if ((serverDeviceId && serverDeviceId !== currentDeviceId) ||
+                    (!serverDeviceId && fallbackDeviceId && fallbackDeviceId !== currentDeviceId)) {
+                    handleAutoLogout();
+                } else {
+                    setCurrentUser(userData);
+                }
+            } catch (error) {
+                console.error('Error parsing user data:', error);
+                localStorage.removeItem('user');
             }
-
-            // Fallback ke mekanisme lama (local storage) jika field server belum tersedia
-            const storedDeviceId = localStorage.getItem(`user_${userData.id}_device`);
-            if (storedDeviceId && storedDeviceId !== currentDeviceId) {
-                handleAutoLogout();
-                return;
-            }
-
-            // Validasi lolos -> set user
-            setCurrentUser(userData);
-        } catch (error) {
-            console.error('Error parsing user data:', error);
-            localStorage.removeItem('user');
         }
     }, []);
 
@@ -542,76 +541,116 @@ export default function Index() {
         setIsLoading(true);
 
         try {
-            // 1. Ambil deviceId & IP address
-            const deviceId = generateDeviceId();
-            const ipAddress = await getPublicIP();
-            const deviceInfo = getDeviceInfo();
-
-            // 2. Kirim ke backend
-            const response = await axios.post(
-                `${import.meta.env.VITE_API_BASE_URL}/users/login`,
-                {
-                    email: loginEmail,
-                    password: loginPassword,
-                    deviceId: deviceId,
-                    ipAddress: ipAddress
-                }
-            );
-
+            const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/users/login`, {
+                email: loginEmail,
+                password: loginPassword
+            }, { withCredentials: true });
+            console.log("responselogin", response)
             if (response.data.success) {
                 const userData = response.data.data.user;
-                const sessionData = response.data.data.session;
 
-                // 3. Simpan user dan session ke localStorage
-                localStorage.setItem("user", JSON.stringify(userData));
-                localStorage.setItem("session", JSON.stringify(sessionData));
+                // UUID perangkat saat ini (persisten di browser ini)
+                const currentDeviceId = generateDeviceId();
+                // UUID perangkat yang tersimpan di database (field dari server)
+                const serverDeviceId = userData.device_uuid || userData.deviceId || null;
 
-                setCurrentUser(userData);
+                // Jika server sudah punya UUID dan berbeda -> tegakkan single-device
+                if (serverDeviceId && serverDeviceId !== currentDeviceId) {
+                    const result = await Swal.fire({
+                        icon: 'warning',
+                        title: 'Login dari Device Lain',
+                        html: `
+                            <p>Akun ini sedang aktif di perangkat lain.</p>
+                            <p class="text-muted small">Melanjutkan akan menonaktifkan perangkat sebelumnya.</p>
+                        `,
+                        showCancelButton: true,
+                        confirmButtonColor: '#155ea0',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: 'Lanjutkan Login',
+                        cancelButtonText: 'Batal',
+                        reverseButtons: true,
+                    });
 
-                // 4. Reset form dan tutup modal
-                setShowAuthModal(false);
-                setLoginEmail("");
-                setLoginPassword("");
+                    if (!result.isConfirmed) {
+                        setIsLoading(false);
+                        return;
+                    }
 
-                // 5. SweetAlert sukses
-                Swal.fire({
-                    icon: "success",
-                    title: "Login Berhasil!",
-                    html: `
-                    <p>Selamat datang kembali, <strong>${userData.name}</strong>!</p>
-                    <p class="text-muted small">
-                        Login dari: ${deviceInfo.type} - ${deviceInfo.browser}<br>
-                        Device ID: <strong>${deviceId}</strong>
-                    </p>
-                `,
-                    showConfirmButton: false,
-                    timer: 2500,
-                    timerProgressBar: true
+                    // Update UUID perangkat di server ke perangkat saat ini
+                    try {
+                        await axios.post(`${import.meta.env.VITE_API_BASE_URL}/users/update_device_uuid`, {
+                            user_id: userData.id,
+                            device_uuid: currentDeviceId,
+                        });
+                        userData.device_uuid = currentDeviceId;
+                    } catch (e) {
+                        console.error('Gagal update device UUID di server:', e);
+                    }
+                } else if (!serverDeviceId) {
+                    // Jika server belum punya UUID -> set pertama kali
+                    try {
+                        await axios.post(`${import.meta.env.VITE_API_BASE_URL}/users/update_device_uuid`, {
+                            user_id: userData.id,
+                            device_uuid: currentDeviceId,
+                        });
+                        userData.device_uuid = currentDeviceId;
+                    } catch (e) {
+                        console.error('Gagal set device UUID di server:', e);
+                    }
+                }
+
+                // Simpan juga ID perangkat di local sebagai fallback lama
+                localStorage.setItem(`user_${userData.id}_device`, currentDeviceId);
+
+                // Logging device info (opsional)
+                const deviceInfo = getDeviceInfo();
+                console.log('Login from device:', {
+                    deviceId: currentDeviceId,
+                    ...deviceInfo
                 });
 
-                console.log("SESSION CREATED:", sessionData);
+                // Simpan data user ke localStorage (termasuk device_uuid terkini)
+                localStorage.setItem('user', JSON.stringify(userData));
+                setCurrentUser(userData);
+
+                // Tutup modal dan reset form
+                setShowAuthModal(false);
+                setLoginEmail('');
+                setLoginPassword('');
+
+                // Sweet Alert Success
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Login Berhasil!',
+                    html: `
+                        <p>Selamat datang kembali, <strong>${userData.name}</strong>!</p>
+                        <p class="text-muted small">Login dari: ${deviceInfo.type} - ${deviceInfo.browser}</p>
+                    `,
+                    showConfirmButton: false,
+                    timer: 2500,
+                    timerProgressBar: true,
+                });
             }
         } catch (error) {
-            let errorMessage = "Login gagal. Silakan coba lagi.";
+            let errorMessage = 'Login gagal. Silakan coba lagi.';
 
             if (error.response) {
                 errorMessage = error.response.data.message || errorMessage;
             } else if (error.request) {
-                errorMessage = "Tidak dapat terhubung ke server. Periksa koneksi Anda.";
+                errorMessage = 'Tidak dapat terhubung ke server. Periksa koneksi Anda.';
             }
 
             Swal.fire({
-                icon: "error",
-                title: "Login Gagal!",
+                icon: 'error',
+                title: 'Login Gagal!',
                 text: errorMessage,
-                confirmButtonText: "Coba Lagi",
-                confirmButtonColor: "#155ea0"
+                confirmButtonText: 'Coba Lagi',
+                confirmButtonColor: '#155ea0',
             });
         } finally {
             setIsLoading(false);
         }
     };
-
 
     // Handler untuk register dengan auto login DAN DEVICE TRACKING
     const handleRegister = async (e) => {
@@ -619,25 +658,21 @@ export default function Index() {
         setIsLoading(true);
 
         try {
-            // Generate username dari email
+            // Generate username dari email (ambil bagian sebelum @)
             const username = registerEmail.split('@')[0];
 
-            // Simpan temp cred untuk auto login
+            // Simpan email dan password untuk auto login
             const tempEmail = registerEmail;
             const tempPassword = registerPassword;
 
-            // Register user
-            const response = await axios.post(
-                `${import.meta.env.VITE_API_BASE_URL}/users`,
-                {
-                    username: username,
-                    name: registerName,
-                    email: registerEmail,
-                    password: registerPassword,
-                    id_role: 1,
-                    phone: registerPhone || null
-                }
-            );
+            const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/users`, {
+                username: username,
+                name: registerName,
+                email: registerEmail,
+                password: registerPassword,
+                id_role: 1, // Role default untuk user biasa
+                phone: registerPhone || null // Gunakan phone dari form atau null
+            });
 
             if (response) {
                 // Reset form
@@ -646,6 +681,7 @@ export default function Index() {
                 setRegisterPhone('');
                 setRegisterPassword('');
 
+                // Sweet Alert Success dengan timer
                 Swal.fire({
                     icon: 'success',
                     title: 'Registrasi Berhasil!',
@@ -655,33 +691,42 @@ export default function Index() {
                     timerProgressBar: true,
                 });
 
-                // AUTO LOGIN
+                // Auto login setelah delay
                 setTimeout(async () => {
                     try {
-                        const deviceId = generateDeviceId();
-                        const ipAddress = await getPublicIP();
-
-                        const loginResponse = await axios.post(
-                            `${import.meta.env.VITE_API_BASE_URL}/users/login`,
-                            {
-                                email: tempEmail,
-                                password: tempPassword,
-                                deviceId: deviceId,
-                                ipAddress: ipAddress
-                            }
-                        );
+                        const loginResponse = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/users/login`, {
+                            email: tempEmail,
+                            password: tempPassword
+                        }, { withCredentials: true });
 
                         if (loginResponse.data.success) {
                             const userData = loginResponse.data.data.user;
-                            const sessionData = loginResponse.data.data.session;
 
-                            // Simpan user dan session
-                            localStorage.setItem("user", JSON.stringify(userData));
-                            localStorage.setItem("session", JSON.stringify(sessionData));
+                            // UUID perangkat saat ini (persisten di browser ini)
+                            const currentDeviceId = generateDeviceId();
 
+                            // Set device UUID di server untuk user baru
+                            try {
+                                await axios.post(`${import.meta.env.VITE_API_BASE_URL}/users/update_device_uuid`, {
+                                    user_id: userData.id,
+                                    device_uuid: currentDeviceId,
+                                });
+                                userData.device_uuid = currentDeviceId;
+                            } catch (e) {
+                                console.error('Gagal set device UUID di server untuk user baru:', e);
+                            }
+
+                            // Simpan juga ID perangkat di local sebagai fallback lama
+                            localStorage.setItem(`user_${userData.id}_device`, currentDeviceId);
+
+                            // Simpan data user ke localStorage
+                            localStorage.setItem('user', JSON.stringify(userData));
                             setCurrentUser(userData);
+
+                            // Tutup modal
                             setShowAuthModal(false);
 
+                            // Sweet Alert Welcome
                             Swal.fire({
                                 icon: 'success',
                                 title: 'Selamat Datang!',
@@ -692,14 +737,14 @@ export default function Index() {
                             });
                         }
                     } catch (loginError) {
-                        // Kalau auto login gagal
+                        // Jika auto login gagal, arahkan ke tab login
                         setAuthTab('login');
                         setLoginEmail(tempEmail);
 
                         Swal.fire({
                             icon: 'warning',
                             title: 'Silakan Login Manual',
-                            text: 'Registrasi berhasil, tetapi gagal login otomatis.',
+                            text: 'Registrasi berhasil, tetapi gagal login otomatis. Silakan login manual.',
                             confirmButtonText: 'OK',
                             confirmButtonColor: '#155ea0',
                         });
@@ -712,15 +757,17 @@ export default function Index() {
             let errorMessage = 'Registrasi gagal. Silakan coba lagi.';
 
             if (error.response) {
+                // Cek jika error duplicate email atau username
                 if (error.response.status === 400 || error.response.status === 409) {
                     errorMessage = 'Email sudah terdaftar. Gunakan email lain.';
                 } else {
                     errorMessage = error.response.data.message || errorMessage;
                 }
             } else if (error.request) {
-                errorMessage = 'Tidak dapat terhubung ke server.';
+                errorMessage = 'Tidak dapat terhubung ke server. Periksa koneksi Anda.';
             }
 
+            // Sweet Alert Error
             Swal.fire({
                 icon: 'error',
                 title: 'Registrasi Gagal!',
@@ -732,7 +779,6 @@ export default function Index() {
             setIsLoading(false);
         }
     };
-
 
     // Handler untuk logout DENGAN CLEAR DEVICE ID
     const handleLogout = () => {
