@@ -156,6 +156,22 @@ export default function Index() {
         };
     };
 
+    // Ambil IP publik pengguna (dengan fallback)
+    const fetchPublicIP = async () => {
+        try {
+            const res = await axios.get('https://api.ipify.org?format=json', { timeout: 5000 });
+            return res.data?.ip || null;
+        } catch (e1) {
+            try {
+                const res2 = await axios.get('https://ipapi.co/json/', { timeout: 5000 });
+                return res2.data?.ip || null;
+            } catch (e2) {
+                console.warn('Gagal mengambil IP publik', e2);
+                return null;
+            }
+        }
+    };
+
     // Periodic check untuk device session
     useEffect(() => {
         if (!logoutChannel) return;
@@ -535,82 +551,51 @@ export default function Index() {
     }
   `;
 
-    // Handler untuk login DENGAN DEVICE TRACKING (single-device menggunakan UUID dari database)
+    // Handler untuk login MENGIRIM device_id dan ip_address ke backend
     const handleLogin = async (e) => {
         e.preventDefault();
         setIsLoading(true);
 
         try {
-            const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/users/login`, {
-                email: loginEmail,
-                password: loginPassword
-            }, { withCredentials: true });
-            console.log("responselogin", response)
+            // Siapkan deviceId dan ipAddress sesuai kebutuhan backend
+            const currentDeviceId = generateDeviceId();
+            const ipAddress = await fetchPublicIP();
+
+            const response = await axios.post(
+                `${import.meta.env.VITE_API_BASE_URL}/users/login`,
+                {
+                    email: loginEmail,
+                    password: loginPassword,
+                    device_id: currentDeviceId,
+                    ip_address: ipAddress,
+                },
+                { withCredentials: true }
+            );
+            console.log("responselogin", response);
+
             if (response.data.success) {
                 const userData = response.data.data.user;
+                const sessionData = response.data.data.session;
 
-                // UUID perangkat saat ini (persisten di browser ini)
-                const currentDeviceId = generateDeviceId();
-                // UUID perangkat yang tersimpan di database (field dari server)
-                const serverDeviceId = userData.device_uuid || userData.deviceId || null;
-
-                // Jika server sudah punya UUID dan berbeda -> tegakkan single-device
-                if (serverDeviceId && serverDeviceId !== currentDeviceId) {
-                    const result = await Swal.fire({
-                        icon: 'warning',
-                        title: 'Login dari Device Lain',
-                        html: `
-                            <p>Akun ini sedang aktif di perangkat lain.</p>
-                            <p class="text-muted small">Melanjutkan akan menonaktifkan perangkat sebelumnya.</p>
-                        `,
-                        showCancelButton: true,
-                        confirmButtonColor: '#155ea0',
-                        cancelButtonColor: '#6c757d',
-                        confirmButtonText: 'Lanjutkan Login',
-                        cancelButtonText: 'Batal',
-                        reverseButtons: true,
-                    });
-
-                    if (!result.isConfirmed) {
-                        setIsLoading(false);
-                        return;
-                    }
-
-                    // Update UUID perangkat di server ke perangkat saat ini
-                    try {
-                        await axios.post(`${import.meta.env.VITE_API_BASE_URL}/users/update_device_uuid`, {
-                            user_id: userData.id,
-                            device_uuid: currentDeviceId,
-                        });
-                        userData.device_uuid = currentDeviceId;
-                    } catch (e) {
-                        console.error('Gagal update device UUID di server:', e);
-                    }
-                } else if (!serverDeviceId) {
-                    // Jika server belum punya UUID -> set pertama kali
-                    try {
-                        await axios.post(`${import.meta.env.VITE_API_BASE_URL}/users/update_device_uuid`, {
-                            user_id: userData.id,
-                            device_uuid: currentDeviceId,
-                        });
-                        userData.device_uuid = currentDeviceId;
-                    } catch (e) {
-                        console.error('Gagal set device UUID di server:', e);
-                    }
-                }
-
-                // Simpan juga ID perangkat di local sebagai fallback lama
+                // Fallback compat: simpan juga deviceId lokal
                 localStorage.setItem(`user_${userData.id}_device`, currentDeviceId);
+                if (ipAddress) {
+                    localStorage.setItem(`user_${userData.id}_ip`, ipAddress);
+                }
 
                 // Logging device info (opsional)
                 const deviceInfo = getDeviceInfo();
                 console.log('Login from device:', {
                     deviceId: currentDeviceId,
-                    ...deviceInfo
+                    ip: ipAddress || 'unknown',
+                    ...deviceInfo,
                 });
 
-                // Simpan data user ke localStorage (termasuk device_uuid terkini)
+                // Simpan user dan session
                 localStorage.setItem('user', JSON.stringify(userData));
+                if (sessionData) {
+                    localStorage.setItem('session', JSON.stringify(sessionData));
+                }
                 setCurrentUser(userData);
 
                 // Tutup modal dan reset form
@@ -625,6 +610,7 @@ export default function Index() {
                     html: `
                         <p>Selamat datang kembali, <strong>${userData.name}</strong>!</p>
                         <p class="text-muted small">Login dari: ${deviceInfo.type} - ${deviceInfo.browser}</p>
+                        <p class="text-muted small">IP: ${ipAddress || 'unknown'}</p>
                     `,
                     showConfirmButton: false,
                     timer: 2500,
@@ -694,39 +680,39 @@ export default function Index() {
                 // Auto login setelah delay
                 setTimeout(async () => {
                     try {
-                        const loginResponse = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/users/login`, {
-                            email: tempEmail,
-                            password: tempPassword
-                        }, { withCredentials: true });
+                        // Siapkan deviceId dan ipAddress untuk auto-login
+                        const currentDeviceId = generateDeviceId();
+                        const ipAddress = await fetchPublicIP();
+
+                        const loginResponse = await axios.post(
+                            `${import.meta.env.VITE_API_BASE_URL}/users/login`,
+                            {
+                                email: tempEmail,
+                                password: tempPassword,
+                                device_id: currentDeviceId,
+                                ip_address: ipAddress,
+                            },
+                            { withCredentials: true }
+                        );
 
                         if (loginResponse.data.success) {
                             const userData = loginResponse.data.data.user;
+                            const sessionData = loginResponse.data.data.session;
 
-                            // UUID perangkat saat ini (persisten di browser ini)
-                            const currentDeviceId = generateDeviceId();
-
-                            // Set device UUID di server untuk user baru
-                            try {
-                                await axios.post(`${import.meta.env.VITE_API_BASE_URL}/users/update_device_uuid`, {
-                                    user_id: userData.id,
-                                    device_uuid: currentDeviceId,
-                                });
-                                userData.device_uuid = currentDeviceId;
-                            } catch (e) {
-                                console.error('Gagal set device UUID di server untuk user baru:', e);
+                            // Tidak perlu set/update device_uuid ke server
+                            localStorage.setItem(`user_${userData.id}_device`, currentDeviceId);
+                            if (ipAddress) {
+                                localStorage.setItem(`user_${userData.id}_ip`, ipAddress);
                             }
 
-                            // Simpan juga ID perangkat di local sebagai fallback lama
-                            localStorage.setItem(`user_${userData.id}_device`, currentDeviceId);
-
-                            // Simpan data user ke localStorage
                             localStorage.setItem('user', JSON.stringify(userData));
+                            if (sessionData) {
+                                localStorage.setItem('session', JSON.stringify(sessionData));
+                            }
                             setCurrentUser(userData);
 
-                            // Tutup modal
                             setShowAuthModal(false);
 
-                            // Sweet Alert Welcome
                             Swal.fire({
                                 icon: 'success',
                                 title: 'Selamat Datang!',
