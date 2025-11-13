@@ -232,7 +232,25 @@ export default function VideoPembahasan() {
 
 
   const playVideo = (item, index) => {
+    // Cek login terlebih dahulu sebelum menampilkan Konten Premium
     if (index >= freePlayableCount || item.premium) {
+      if (!currentUser || !currentUser.id) {
+        Swal.fire({
+          icon: 'info',
+          title: 'Login Diperlukan',
+          text: 'Silakan login terlebih dahulu untuk mengakses Mata Pelajaran ini.',
+          confirmButtonText: 'Login Sekarang',
+          confirmButtonColor: '#155ea0',
+          showCancelButton: true,
+          cancelButtonText: 'Batal',
+          reverseButtons: true,
+        }).then((result) => {
+          if (result.isConfirmed) {
+            navigate('/')
+          }
+        })
+        return
+      }
       setShowPayModal(true)
       return
     }
@@ -246,7 +264,6 @@ export default function VideoPembahasan() {
       description: item.description || '',
       id_sub_mapel_detail: item.id_sub_mapel_detail,
     })
-
     setSearchParams({ v: item.id_sub_mapel_detail }, { replace: true })
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -464,6 +481,29 @@ export default function VideoPembahasan() {
     }
   }
 
+  const handleLoginOrRedeem = async () => {
+    if (!currentUser || !currentUser.id) {
+      navigate('/')
+      return
+    }
+
+    const { value } = await Swal.fire({
+      icon: 'info',
+      title: 'Masukkan Kode Redeem',
+      input: 'text',
+      inputPlaceholder: 'Contoh: ABC123',
+      confirmButtonText: 'Gunakan',
+      confirmButtonColor: '#155ea0',
+      showCancelButton: true,
+      cancelButtonText: 'Batal',
+    })
+
+    if (value) {
+      setRedeemCode(String(value).trim())
+      handleRedeemCode()
+    }
+  }
+
   const handleUpgradePremium = () => {
     try {
       const userData = currentUser || JSON.parse(localStorage.getItem('user') || '{}')
@@ -645,8 +685,13 @@ Terima kasih! 🙏`
                   ⭐ Premium
                 </span>
               )}
+              {/* <button
+                className="btn btn-light rounded-pill px-3"
+                onClick={handleLoginOrRedeem}
+              >
+                {!currentUser ? 'Masuk ke Akun' : 'Redeem Kode'}
+              </button> */}
               <button className="btn btn-light rounded-pill px-3" onClick={() => navigate(-1)}>
-                {/* ⬅️ Kembali */}
                 Kembali
               </button>
             </div>

@@ -78,6 +78,7 @@ export default function Index() {
     // Inisialisasi channel broadcast untuk logout lintas-tab
     const [logoutChannel, setLogoutChannel] = useState(null);
 
+
     useEffect(() => {
         if (typeof BroadcastChannel === 'undefined') {
             // Browser tidak mendukung BroadcastChannel
@@ -796,42 +797,19 @@ export default function Index() {
         setAuthTab(newTab);
     };
 
-    // Handler untuk navigate ke detail mapel - DENGAN CEK LOGIN
+    // Handler untuk navigate ke detail mapel - TANPA ALERT LOGIN (dipindah ke Video/Pembahasan)
     const handleCourseClick = (course) => {
-        //
-        // Cek apakah user sudah login
-        if (!currentUser) {
-            // Jika belum login, tampilkan modal konfirmasi
-            Swal.fire({
-                icon: 'info',
-                title: 'Login Diperlukan',
-                text: 'Silakan login terlebih dahulu untuk mengakses Mata Pelajaran ini.',
-                confirmButtonText: 'Login Sekarang',
-                confirmButtonColor: '#155ea0',
-                showCancelButton: true,
-                cancelButtonText: 'Batal',
-                reverseButtons: true,
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    // Tampilkan modal auth dengan tab login
-                    setShowAuthModal(true);
-                    setAuthTab('login');
-                }
-            });
-            return;
-        }
-        console.log("course", course.type_mapel)
-        // Jika sudah login, navigate ke /detail-mapel/{id_sub_mapel}
+        console.log("course", course.type_mapel);
+        // Halaman Video/Pembahasan akan menangani alert login jika user belum login
         if (course.type_mapel == 0) {
             navigate(`/detail-mapel/${course.id_sub_mapel}`, {
-                state: { course } // Pass course data jika diperlukan di halaman detail
+                state: { course }
             });
         } else if (course.type_mapel == 1) {
             navigate(`/video/${course.id_sub_mapel}/${course.title}`, {
-                state: { course } // Pass course data jika diperlukan di halaman detail
+                state: { course }
             });
         }
-
     };
 
     const renderContent = () => {
