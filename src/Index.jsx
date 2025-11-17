@@ -920,13 +920,42 @@ const renderContent = () => {
                                 Kuasai konsep matematika dan fisika dengan metode pembelajaran interaktif dan menyenangkan
                             </p>
 
-                            <button
-                                className="btn btn-light rounded-pill px-4 py-3 fw-bold shadow d-inline-flex align-items-center gap-2"
-                                style={{ fontSize: '15px' }}
-                            >
-                                <span>🚀</span>
-                                <span>Lanjutkan Belajar</span>
-                            </button>
+                            {/* Label harga tahunan */}
+                            <div className="d-inline-block mb-4">
+                                <div
+                                    className="badge rounded-pill px-3 py-2 d-inline-flex align-items-center gap-2"
+                                    style={{
+                                        background: 'rgba(255,255,255,0.25)',
+                                        fontSize: '13px',
+                                        fontWeight: 700,
+                                    }}
+                                >
+                                    <span>💎</span>
+                                    <span className="d-inline-flex align-items-baseline gap-2">
+                                        <span style={{ fontSize: '16px', fontWeight: 800, letterSpacing: '0.2px' }}>
+                                            Biaya
+                                        </span>
+                                        <span
+                                            style={{
+                                                fontSize: '20px',
+                                                fontWeight: 800,
+                                                background: 'linear-gradient(90deg, #ffffff 0%, #ffe08a 100%)',
+                                                WebkitBackgroundClip: 'text',
+                                                WebkitTextFillColor: 'transparent',
+                                                textShadow: '0 1px 1px rgba(0,0,0,0.15)',
+                                            }}
+                                        >
+                                            1 Juta
+                                        </span>
+                                        <span className="text-white-75" style={{ fontSize: '12px' }}>
+                                            per tahun
+                                        </span>
+                                    </span>
+                                </div>
+                                {/* <div className="mt-2 small text-white-75">
+                                    Akses semua materi premium sepanjang tahun: video lengkap, pembahasan mendalam
+                                </div> */}
+                            </div>
                         </div>
 
                         <div
