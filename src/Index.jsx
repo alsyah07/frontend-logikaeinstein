@@ -78,6 +78,12 @@ export default function Index() {
     // Inisialisasi channel broadcast untuk logout lintas-tab
     const [logoutChannel, setLogoutChannel] = useState(null);
 
+    // Pastikan tidak bisa berada di tab Profil jika belum login
+    useEffect(() => {
+        if (!currentUser && tab === 'Profil') {
+            setTab('Home');
+        }
+    }, [currentUser, tab]);
 
     useEffect(() => {
         if (typeof BroadcastChannel === 'undefined') {
@@ -448,48 +454,6 @@ export default function Index() {
 
     // ... existing code ...}
 
-const riwayatData = [
-    {
-        title: 'Matematika Kelas 7',
-        category: 'Matematika',
-        progress: 80,
-        lastAccessed: '2 jam lalu',
-        totalTime: '12 jam 30 menit',
-        completedModules: 20,
-        totalModules: 25,
-        status: 'Berlangsung'
-    },
-    {
-        title: 'Fisika Kelas 7',
-        category: 'Fisika',
-        progress: 65,
-        lastAccessed: '1 hari lalu',
-        totalTime: '8 jam 15 menit',
-        completedModules: 13,
-        totalModules: 20,
-        status: 'Berlangsung'
-    },
-    {
-        title: 'Matematika Kelas 8',
-        category: 'Matematika',
-        progress: 45,
-        lastAccessed: '3 hari lalu',
-        totalTime: '6 jam 45 menit',
-        completedModules: 10,
-        totalModules: 22,
-        status: 'Berlangsung'
-    },
-    {
-        title: 'Mekanika',
-        category: 'Fisika',
-        progress: 30,
-        lastAccessed: '1 minggu lalu',
-        totalTime: '4 jam 20 menit',
-        completedModules: 7,
-        totalModules: 24,
-        status: 'Berlangsung'
-    },
-];
 
 const filtered = courses.filter((c) => {
     const matchCat = c.category === category;
@@ -921,7 +885,7 @@ const renderContent = () => {
                             </p>
 
                             {/* Label harga tahunan */}
-                            <div className="d-inline-block mb-4">
+                            {/* <div className="d-inline-block mb-4">
                                 <div
                                     className="badge rounded-pill px-3 py-2 d-inline-flex align-items-center gap-2"
                                     style={{
@@ -952,10 +916,8 @@ const renderContent = () => {
                                         </span>
                                     </span>
                                 </div>
-                                {/* <div className="mt-2 small text-white-75">
-                                    Akses semua materi premium sepanjang tahun: video lengkap, pembahasan mendalam
-                                </div> */}
-                            </div>
+                             
+                            </div> */}
                         </div>
 
                         <div
@@ -1389,15 +1351,20 @@ const renderContent = () => {
                 </div>
             </div>
         );
-    } else if (tab === 'Profil') {
-        const deviceId = currentUser ? localStorage.getItem(`user_${currentUser.id}_device`) : localStorage.getItem('device_id');
-        const ipAddress = currentUser ? localStorage.getItem(`user_${currentUser.id}_ip`) : null;
+    } else if (tab === 'Profil' && currentUser) {
+        const storedUserRaw = localStorage.getItem('user');
+        const storedUserFromLocal = storedUserRaw ? JSON.parse(storedUserRaw) : null;
+        const user = currentUser || storedUserFromLocal;
+
+        const deviceId = user ? localStorage.getItem(`user_${user.id}_device`) : localStorage.getItem('device_id');
+        const ipAddress = user ? localStorage.getItem(`user_${user.id}_ip`) : null;
+
         const personalInfo = {
-            name: currentUser?.name || 'Tamu',
-            username: currentUser?.username || '-',
-            email: currentUser?.email || '-',
-            phone: currentUser?.phone || '-',
-            userId: currentUser?.id || '-',
+            name: user?.name || '-',
+            username: user?.username || '-',
+            email: user?.email || '-',
+            phone: user?.phone || '-',
+            userId: user?.id ?? '-',
             deviceId: deviceId || '-',
             ipAddress: ipAddress || '-',
         };
@@ -1439,56 +1406,59 @@ const renderContent = () => {
                 {/* Profile Menu */}
                 <div className="card border-0 shadow-sm rounded-4 mb-3">
                     <div className="card-body p-0">
-                        <div className="p-3 text-dark border-bottom">
-                            <div className="d-flex align-items-center gap-3">
-                                <div
-                                    className="d-flex align-items-center justify-content-center rounded-3"
-                                    style={{
-                                        width: '48px',
-                                        height: '48px',
-                                        background: 'linear-gradient(135deg, #155ea0 0%, #829dc5ff 100%)',
-                                        fontSize: '20px',
-                                    }}
-                                >
-                                    👤
+                        {/* Profil: tampil hanya jika login */}
+                        {currentUser && (
+                            <div className="p-3 text-dark border-bottom">
+                                <div className="d-flex align-items-center gap-3">
+                                    <div
+                                        className="d-flex align-items-center justify-content-center rounded-3"
+                                        style={{
+                                            width: '48px',
+                                            height: '48px',
+                                            background: 'linear-gradient(135deg, #155ea0 0%, #829dc5ff 100%)',
+                                            fontSize: '20px',
+                                        }}
+                                    >
+                                        👤
+                                    </div>
+                                    <div className="flex-grow-1">
+                                        <div className="fw-bold">Informasi Pribadi</div>
+                                        <small className="text-muted">Kelola data diri kamu</small>
+                                    </div>
                                 </div>
-                                <div className="flex-grow-1">
-                                    <div className="fw-bold">Informasi Pribadi</div>
-                                    <small className="text-muted">Kelola data diri kamu</small>
-                                </div>
-                            </div>
 
-                            <div className="mt-3 d-grid" style={{ gap: '10px' }}>
-                                <div className="d-flex justify-content-between align-items-center">
-                                    <span className="text-muted small">Nama</span>
-                                    <span className="fw-semibold">{personalInfo.name}</span>
-                                </div>
-                                <div className="d-flex justify-content-between align-items-center">
-                                    <span className="text-muted small">Username</span>
-                                    <span className="fw-semibold">{personalInfo.username}</span>
-                                </div>
-                                <div className="d-flex justify-content-between align-items-center">
-                                    <span className="text-muted small">Email</span>
-                                    <span className="fw-semibold">{personalInfo.email}</span>
-                                </div>
-                                <div className="d-flex justify-content-between align-items-center">
-                                    <span className="text-muted small">Telepon</span>
-                                    <span className="fw-semibold">{personalInfo.phone}</span>
-                                </div>
-                                <div className="d-flex justify-content-between align-items-center">
-                                    <span className="text-muted small">User ID</span>
-                                    <span className="fw-semibold">{personalInfo.userId}</span>
-                                </div>
-                                <div className="d-flex justify-content-between align-items-center">
-                                    <span className="text-muted small">Device ID</span>
-                                    <span className="fw-semibold">{personalInfo.deviceId}</span>
-                                </div>
-                                <div className="d-flex justify-content-between align-items-center">
-                                    <span className="text-muted small">IP Address</span>
-                                    <span className="fw-semibold">{personalInfo.ipAddress}</span>
+                                <div className="mt-3 d-grid" style={{ gap: '10px' }}>
+                                    <div className="d-flex justify-content-between align-items-center">
+                                        <span className="text-muted small">Nama</span>
+                                        <span className="fw-semibold">{personalInfo.name}</span>
+                                    </div>
+                                    <div className="d-flex justify-content-between align-items-center">
+                                        <span className="text-muted small">Username</span>
+                                        <span className="fw-semibold">{personalInfo.username}</span>
+                                    </div>
+                                    <div className="d-flex justify-content-between align-items-center">
+                                        <span className="text-muted small">Email</span>
+                                        <span className="fw-semibold">{personalInfo.email}</span>
+                                    </div>
+                                    <div className="d-flex justify-content-between align-items-center">
+                                        <span className="text-muted small">Telepon</span>
+                                        <span className="fw-semibold">{personalInfo.phone}</span>
+                                    </div>
+                                    <div className="d-flex justify-content-between align-items-center">
+                                        <span className="text-muted small">User ID</span>
+                                        <span className="fw-semibold">{personalInfo.userId}</span>
+                                    </div>
+                                    {/* <div className="d-flex justify-content-between align-items-center">
+                                        <span className="text-muted small">Device ID</span>
+                                        <span className="fw-semibold">{personalInfo.deviceId}</span>
+                                    </div> */}
+                                    <div className="d-flex justify-content-between align-items-center">
+                                        <span className="text-muted small">IP Address</span>
+                                        <span className="fw-semibold">{personalInfo.ipAddress}</span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        )}
 
                         {/* <a href="#" className="d-flex align-items-center gap-3 p-3 text-decoration-none text-dark border-bottom">
                             <div
@@ -1625,11 +1595,17 @@ return (
                 }}
             >
                 <div className="container d-flex justify-content-around" style={{ maxWidth: '1200px' }}>
-                    {[
-                        { name: 'Home', icon: '🏠' },
-                        { name: 'Riwayat', icon: '📚' },
-                        { name: 'Profil', icon: '👤' },
-                    ].map(({ name, icon }) => (
+                    {(currentUser
+                        ? [
+                            { name: 'Home', icon: '🏠' },
+                            { name: 'Riwayat', icon: '📚' },
+                            { name: 'Profil', icon: '👤' },
+                        ]
+                        : [
+                            { name: 'Home', icon: '🏠' },
+                            { name: 'Riwayat', icon: '📚' },
+                        ]
+                    ).map(({ name, icon }) => (
                         <button
                             key={name}
                             className={`nav-item btn d-flex flex-column align-items-center border-0 p-2 ${tab === name ? 'active' : ''}`}
