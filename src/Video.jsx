@@ -927,15 +927,15 @@ Terima kasih! 🙏`
             <div className="modal-body">
               <p className="mb-3">
                 <div className="card border-0 bg-light rounded-3 p-3 mb-3">
-                <h4>Biaya berlangganan: 1 juta rupiah/tahun</h4>
-                <hr/>
-                <h6 className="fw-bold mb-2">✨ Keuntungan Premium:</h6>
-                <ul className="mb-0">
-                  <li>No redeem yg kamu dapat bisa digunakan selama setahun dan 
-                    kamu bebas buka sebanyak banyaknya video dari materi kelas 7 hingga kelas 12</li>
-                  {/* <li>✅ Materi lengkap dan pembahasan</li> */}
-                </ul>
-              </div>
+                  <h6 className="fw-bold mb-2">Biaya berlangganan: 1 juta rupiah/tahun</h6>
+                  <hr />
+                  <h6 className="fw-bold mb-2">✨ Keuntungan Premium:</h6>
+                  <ul className="mb-0">
+                    <li style={{ fontSize: '10px' }}>No redeem yg kamu dapat bisa digunakan selama setahun dan
+                      kamu bebas buka sebanyak banyaknya video dari materi kelas 7 hingga kelas 12</li>
+                    {/* <li>✅ Materi lengkap dan pembahasan</li> */}
+                  </ul>
+                </div>
               </p>
 
               {/* Kode Redeem Section */}

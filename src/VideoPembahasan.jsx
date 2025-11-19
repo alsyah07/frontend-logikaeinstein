@@ -29,17 +29,17 @@ export default function VideoPembahasan() {
   const [playlist, setPlaylist] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [isVideoLoading, setIsVideoLoading] = useState(true)
-  
+
   // State untuk kode redeem
   const [redeemCode, setRedeemCode] = useState('')
   const [isRedeeming, setIsRedeeming] = useState(false)
-  
+
   // State untuk status premium user
   const [isPremiumUser, setIsPremiumUser] = useState(false)
-  
+
   // State untuk free playable count
   const [freePlayableCount, setFreePlayableCount] = useState(2)
-  
+
   // State untuk video yang disimpan
   const [isSaved, setIsSaved] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -116,7 +116,7 @@ export default function VideoPembahasan() {
   const writeSavedList = (uid, list) => {
     try {
       localStorage.setItem(SAVED_LIST_KEY(uid), JSON.stringify(list))
-    } catch {}
+    } catch { }
   }
 
   // Muat playlist dan tentukan video awal
@@ -156,7 +156,7 @@ export default function VideoPembahasan() {
           const d = new Date(iso)
           return isNaN(d) ? null : d
         }
-        
+
         const now = new Date()
         const start = parseDate(redeem?.start_date || redeem?.date)
         const end = parseDate(redeem?.expired_date)
@@ -177,7 +177,7 @@ export default function VideoPembahasan() {
         } else if (hasRedeemedBefore && !redeemActive) {
           freeCount = Math.max(2, Math.ceil(totalVideos * 0.2))
         }
-        
+
         setFreePlayableCount(freeCount)
         setIsPremiumUser(userIsPremium)
         //console.log("items",items[0].sub_mapel)
@@ -213,7 +213,7 @@ export default function VideoPembahasan() {
             id_sub_mapel_detail: initial.id_sub_mapel_detail,
           })
           setSearchParams({ v: initial.id_sub_mapel_detail }, { replace: true })
-          
+
           // Tandai apakah video sudah disimpan pada arsip pengguna
           const saved = currentUser?.id
             ? readSavedList(currentUser.id).some(v => String(v.id_sub_mapel_detail) === String(initial.id_sub_mapel_detail))
@@ -254,7 +254,7 @@ export default function VideoPembahasan() {
       setShowPayModal(true)
       return
     }
-    
+
     setIsVideoLoading(true)
     setCurrentVideo({
       title: item.title,
@@ -621,7 +621,7 @@ Terima kasih! 🙏`
           </div>
         )}
 
-         <iframe
+        <iframe
           src={currentVideo.url}
           title={currentVideo.title}
           frameBorder="0"
@@ -713,12 +713,11 @@ Terima kasih! 🙏`
               <div className="mt-3">
                 <div className="d-flex align-items-start justify-content-between gap-3 mb-2">
                   <h4 className="fw-bold mb-0">{currentVideo.title} - {judul}</h4>
-                  
+
                   {/* Save Button */}
                   <button
-                    className={`btn rounded-pill px-4 d-flex align-items-center gap-2 ${
-                      isSaved ? 'btn-warning' : 'btn-outline-secondary'
-                    }`}
+                    className={`btn rounded-pill px-4 d-flex align-items-center gap-2 ${isSaved ? 'btn-warning' : 'btn-outline-secondary'
+                      }`}
                     onClick={handleToggleSaveVideo}
                     disabled={isSaving || !currentUser}
                     title={isSaved ? 'Hapus dari arsip' : 'Simpan ke arsip'}
@@ -736,7 +735,7 @@ Terima kasih! 🙏`
                     )}
                   </button>
                 </div>
-                
+
                 <div className="d-flex flex-wrap align-items-center gap-3 text-muted mb-3">
                   <span>👁️ {currentVideo.views} x ditonton</span>
                   <span>•</span>
@@ -911,8 +910,19 @@ Terima kasih! 🙏`
               />
             </div>
             <div className="modal-body">
-              <p className="mb-3">Video ini adalah konten premium. Upgrade untuk mengakses semua fitur!</p>
-              
+              <p className="mb-3">
+                <div className="card border-0 bg-light rounded-3 p-3 mb-3">
+                  <h6 className="fw-bold mb-2">Biaya berlangganan: 1 juta rupiah/tahun</h6>
+                  <hr />
+                  <h6 className="fw-bold mb-2">✨ Keuntungan Premium:</h6>
+                  <ul className="mb-0">
+                    <li style={{ fontSize: '10px' }}>No redeem yg kamu dapat bisa digunakan selama setahun dan
+                      kamu bebas buka sebanyak banyaknya video dari materi kelas 7 hingga kelas 12</li>
+                    {/* <li>✅ Materi lengkap dan pembahasan</li> */}
+                  </ul>
+                </div>
+              </p>
+
               {/* Kode Redeem Section */}
               <div className="card border-0 bg-light rounded-3 p-3 mb-3">
                 <h6 className="fw-bold mb-2">🎟️ Punya Kode Redeem?</h6>
@@ -933,7 +943,7 @@ Terima kasih! 🙏`
                     }}
                     disabled={isRedeeming}
                     maxLength={20}
-                    style={{ 
+                    style={{
                       borderRadius: '8px 0 0 8px',
                       fontSize: '14px',
                       letterSpacing: '1px',
@@ -942,8 +952,8 @@ Terima kasih! 🙏`
                   />
                   <button
                     className="btn text-white"
-                    style={{ 
-                      background: catData.gradient, 
+                    style={{
+                      background: catData.gradient,
                       border: 'none',
                       borderRadius: '0 8px 8px 0',
                       minWidth: '100px'
@@ -969,7 +979,7 @@ Terima kasih! 🙏`
               {/* Divider */}
               <div className="position-relative my-4">
                 <hr />
-                <span 
+                <span
                   className="position-absolute top-50 start-50 translate-middle bg-white px-3 text-muted"
                   style={{ fontSize: '14px' }}
                 >
@@ -978,14 +988,8 @@ Terima kasih! 🙏`
               </div>
 
               {/* Benefits Section */}
-              <div className="card border-0 bg-light rounded-3 p-3 mb-3">
-                <h6 className="fw-bold mb-2">✨ Keuntungan Premium:</h6>
-                <ul className="mb-0">
-                  <li>✅ Akses semua video premium</li>
-                  <li>✅ Materi lengkap dan pembahasan</li>
-                </ul>
-              </div>
-              
+
+
               <div className="alert alert-info rounded-3 mb-0">
                 <small>
                   💬 Klik tombol di bawah untuk menghubungi admin via WhatsApp dan dapatkan kode redeem.
