@@ -925,7 +925,18 @@ Terima kasih! 🙏`
               />
             </div>
             <div className="modal-body">
-              <p className="mb-3">Video ini adalah konten premium. Upgrade untuk mengakses semua fitur!</p>
+              <p className="mb-3">
+                <div className="card border-0 bg-light rounded-3 p-3 mb-3">
+                <h4>Biaya berlangganan: 1 juta rupiah/tahun</h4>
+                <hr/>
+                <h6 className="fw-bold mb-2">✨ Keuntungan Premium:</h6>
+                <ul className="mb-0">
+                  <li>No redeem yg kamu dapat bisa digunakan selama setahun dan 
+                    kamu bebas buka sebanyak banyaknya video dari materi kelas 7 hingga kelas 12</li>
+                  {/* <li>✅ Materi lengkap dan pembahasan</li> */}
+                </ul>
+              </div>
+              </p>
 
               {/* Kode Redeem Section */}
               <div className="card border-0 bg-light rounded-3 p-3 mb-3">
@@ -992,13 +1003,7 @@ Terima kasih! 🙏`
               </div>
 
               {/* Benefits Section */}
-              <div className="card border-0 bg-light rounded-3 p-3 mb-3">
-                <h6 className="fw-bold mb-2">✨ Keuntungan Premium:</h6>
-                <ul className="mb-0">
-                  <li>✅ Akses semua video premium</li>
-                  <li>✅ Materi lengkap dan pembahasan</li>
-                </ul>
-              </div>
+              
 
               <div className="alert alert-info rounded-3 mb-0">
                 <small>

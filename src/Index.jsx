@@ -1390,6 +1390,17 @@ const renderContent = () => {
             </div>
         );
     } else if (tab === 'Profil') {
+        const deviceId = currentUser ? localStorage.getItem(`user_${currentUser.id}_device`) : localStorage.getItem('device_id');
+        const ipAddress = currentUser ? localStorage.getItem(`user_${currentUser.id}_ip`) : null;
+        const personalInfo = {
+            name: currentUser?.name || 'Tamu',
+            username: currentUser?.username || '-',
+            email: currentUser?.email || '-',
+            phone: currentUser?.phone || '-',
+            userId: currentUser?.id || '-',
+            deviceId: deviceId || '-',
+            ipAddress: ipAddress || '-',
+        };
         return (
             <div className="container" style={{ maxWidth: '900px' }}>
                 {/* Profile Header */}
@@ -1422,56 +1433,64 @@ const renderContent = () => {
 
                 {/* Quick Stats */}
                 <div className="row g-3 mb-4">
-                    {/* <div className="col-4">
-                        <div className="profile-stat card border-0 shadow-sm rounded-3 p-3 text-center">
-                            <div className="mb-2" style={{ fontSize: '32px' }}>🎯</div>
-                            <h5 className="fw-bold mb-0" style={{ color: '#155ea0' }}>Level 5</h5>
-                            <small className="text-muted">Intermediate</small>
-                        </div>
-                    </div>
-                    <div className="col-4">
-                        <div className="profile-stat card border-0 shadow-sm rounded-3 p-3 text-center">
-                            <div className="mb-2" style={{ fontSize: '32px' }}>⭐</div>
-                            <h5 className="fw-bold mb-0" style={{ color: '#155ea0' }}>850</h5>
-                            <small className="text-muted">Total Poin</small>
-                        </div>
-                    </div>
-                    <div className="col-4">
-                        <div className="profile-stat card border-0 shadow-sm rounded-3 p-3 text-center">
-                            <div className="mb-2" style={{ fontSize: '32px' }}>🔥</div>
-                            <h5 className="fw-bold mb-0" style={{ color: '#155ea0' }}>7</h5>
-                            <small className="text-muted">Hari Streak</small>
-                        </div>
-                    </div> */}
+
                 </div>
 
                 {/* Profile Menu */}
                 <div className="card border-0 shadow-sm rounded-4 mb-3">
                     <div className="card-body p-0">
-                        <a href="#" className="d-flex align-items-center gap-3 p-3 text-decoration-none text-dark border-bottom">
-                            <div
-                                className="d-flex align-items-center justify-content-center rounded-3"
-                                style={{
-                                    width: '48px',
-                                    height: '48px',
-                                    background: 'linear-gradient(135deg, #155ea0 0%, #829dc5ff 100%)',
-                                    fontSize: '20px',
-                                }}
-                            >
-                                👤
+                        <div className="p-3 text-dark border-bottom">
+                            <div className="d-flex align-items-center gap-3">
+                                <div
+                                    className="d-flex align-items-center justify-content-center rounded-3"
+                                    style={{
+                                        width: '48px',
+                                        height: '48px',
+                                        background: 'linear-gradient(135deg, #155ea0 0%, #829dc5ff 100%)',
+                                        fontSize: '20px',
+                                    }}
+                                >
+                                    👤
+                                </div>
+                                <div className="flex-grow-1">
+                                    <div className="fw-bold">Informasi Pribadi</div>
+                                    <small className="text-muted">Kelola data diri kamu</small>
+                                </div>
                             </div>
-                            <div className="flex-grow-1">
-                                <div className="fw-bold">Informasi Pribadi</div>
-                                <small className="text-muted">Kelola data diri kamu</small>
+
+                            <div className="mt-3 d-grid" style={{ gap: '10px' }}>
+                                <div className="d-flex justify-content-between align-items-center">
+                                    <span className="text-muted small">Nama</span>
+                                    <span className="fw-semibold">{personalInfo.name}</span>
+                                </div>
+                                <div className="d-flex justify-content-between align-items-center">
+                                    <span className="text-muted small">Username</span>
+                                    <span className="fw-semibold">{personalInfo.username}</span>
+                                </div>
+                                <div className="d-flex justify-content-between align-items-center">
+                                    <span className="text-muted small">Email</span>
+                                    <span className="fw-semibold">{personalInfo.email}</span>
+                                </div>
+                                <div className="d-flex justify-content-between align-items-center">
+                                    <span className="text-muted small">Telepon</span>
+                                    <span className="fw-semibold">{personalInfo.phone}</span>
+                                </div>
+                                <div className="d-flex justify-content-between align-items-center">
+                                    <span className="text-muted small">User ID</span>
+                                    <span className="fw-semibold">{personalInfo.userId}</span>
+                                </div>
+                                <div className="d-flex justify-content-between align-items-center">
+                                    <span className="text-muted small">Device ID</span>
+                                    <span className="fw-semibold">{personalInfo.deviceId}</span>
+                                </div>
+                                <div className="d-flex justify-content-between align-items-center">
+                                    <span className="text-muted small">IP Address</span>
+                                    <span className="fw-semibold">{personalInfo.ipAddress}</span>
+                                </div>
                             </div>
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M9 18l6-6-6-6" />
-                            </svg>
-                        </a>
+                        </div>
 
-
-
-                        <a href="#" className="d-flex align-items-center gap-3 p-3 text-decoration-none text-dark border-bottom">
+                        {/* <a href="#" className="d-flex align-items-center gap-3 p-3 text-decoration-none text-dark border-bottom">
                             <div
                                 className="d-flex align-items-center justify-content-center rounded-3"
                                 style={{
@@ -1490,9 +1509,9 @@ const renderContent = () => {
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M9 18l6-6-6-6" />
                             </svg>
-                        </a>
+                        </a> */}
 
-                        <a href="#" className="d-flex align-items-center gap-3 p-3 text-decoration-none text-dark">
+                        {/* <a href="#" className="d-flex align-items-center gap-3 p-3 text-decoration-none text-dark">
                             <div
                                 className="d-flex align-items-center justify-content-center rounded-3"
                                 style={{
@@ -1511,7 +1530,7 @@ const renderContent = () => {
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M9 18l6-6-6-6" />
                             </svg>
-                        </a>
+                        </a> */}
                     </div>
                 </div>
 
