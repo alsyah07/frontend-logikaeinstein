@@ -63,10 +63,20 @@ export default function RedeemList() {
           const d = new Date(iso)
           return isNaN(d) ? null : d
         }
-
+        // Tambah helper: berakhir 1 tahun dari mulai
+        const addOneYear = (d) => {
+          if (!d) return null
+          const copy = new Date(d)
+          copy.setFullYear(copy.getFullYear() + 1)
+          return copy
+        }
+    
         const mapped = (Array.isArray(list) ? list : [list]).map((it) => {
           const start = toDate(it.start_date)
-          const end = toDate(it.end_date || it.expired_date)
+          const originalEnd = toDate(it.end_date || it.expired_date)
+          // Hitung berakhir = mulai + 1 tahun (fallback ke end original jika start tidak ada)
+          const end = start ? addOneYear(start) : originalEnd
+    
           const now = new Date()
           const isExpired = end && end < now
           const isActive = start && end && start <= now && now <= end
