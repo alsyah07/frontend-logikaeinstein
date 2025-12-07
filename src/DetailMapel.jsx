@@ -80,7 +80,7 @@ export default function DetailMapel() {
     const handleNavigateToVideo = () => {
         if (selectedMateri?.id_sub_detail_mapel && selectedMateri?.judul) {
             handleCloseModal()
-            navigate(`/video/${selectedMateri.id_sub_detail_mapel}/${encodeURIComponent(selectedMateri.judul)}`)
+            navigate(`/video/${selectedMateri.id_sub_detail_mapel}/${encodeURIComponent(selectedMateri.judul)}/logika`)
         }
     }
 

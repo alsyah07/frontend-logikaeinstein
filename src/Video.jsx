@@ -9,7 +9,7 @@ export default function Video() {
   const [currentUser, setCurrentUser] = useState(null);
   const navigate = useNavigate()
   const { state } = useLocation()
-  const { id, judul } = useParams()
+  const { id, judul, mapel } = useParams()
   const [searchParams, setSearchParams] = useSearchParams()
 
   const course = state?.course
@@ -141,10 +141,11 @@ export default function Video() {
       }
 
       try {
+        const normalizedJudul = (judul ?? 'master').trim()
+        const safeJudul = encodeURIComponent(normalizedJudul)
         const base = import.meta.env.VITE_API_BASE_URL
-        const endpoint = userId
-          ? `${base}/detail_video_mapel/sub_mapel/${id}/${userId}`
-          : `${base}/detail_video_mapel/sub_mapel/${id}`
+        const endpoint = `${base}/detail_video_mapel/sub_mapel/${id}/${mapel}`
+        console.log('cekurl', endpoint)
 
         const res = await axios.get(endpoint)
         const data = res.data?.data || {}

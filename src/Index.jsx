@@ -835,7 +835,7 @@ const handleCourseClick = (course) => {
             state: { course }
         });
     } else if (course.type_mapel == 1) {
-        navigate(`/video/${course.id_sub_mapel}/${course.title}`, {
+        navigate(`/video/${course.id_sub_mapel}/${course.title}/mapel`, {
             state: { course }
         });
     }

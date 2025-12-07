@@ -12,7 +12,7 @@ function App() {
         <Route path="/" element={<Index />} />
         <Route path="/detail-mapel/:id" element={<DetailMapel />} />
         <Route path="/video" element={<Video />} />
-         <Route path="/video/:id/:judul" element={<Video />} />
+         <Route path="/video/:id/:judul/:mapel" element={<Video />} />
         <Route path="/pembahasan" element={<VideoPembahasan />} />
         <Route path="/pembahasan/:id/:judul" element={<VideoPembahasan />} />
         <Route path="/code_redeem_logika" element={<RedeemList />} />
