@@ -728,7 +728,7 @@ Terima kasih! 🙏`
               {/* Video Info */}
               <div className="mt-3">
                 <div className="d-flex align-items-start justify-content-between gap-3 mb-2">
-                  <h4 className="fw-bold mb-0">{currentVideo.title} - {judul}</h4>
+                  <h4 className="fw-bold mb-0">{currentVideo.title} - {judul} ({currentIndex >= 0 ? currentIndex + 1 : 1})</h4>
 
                   {/* Save Button */}
                   <button
@@ -752,11 +752,11 @@ Terima kasih! 🙏`
                   </button>
                 </div>
 
-                <div className="d-flex flex-wrap align-items-center gap-3 text-muted mb-3">
+                {/* <div className="d-flex flex-wrap align-items-center gap-3 text-muted mb-3">
                   <span>👁️ {currentVideo.views} x ditonton</span>
                   <span>•</span>
                   <span>📅 {currentVideo.date}</span>
-                </div>
+                </div> */}
 
                 {/* Navigation Buttons */}
                 {playlist.length > 1 && (
@@ -879,7 +879,7 @@ Terima kasih! 🙏`
                               style={{ fontSize: '14px' }}
                               title={item.title}
                             >
-                              {item.title} - {judul}
+                              {item.title} - {judul} ({i + 1})
                             </div>
                             {item.premium && (
                               <span className="badge bg-warning text-dark rounded-pill flex-shrink-0" style={{ fontSize: '10px' }}>
