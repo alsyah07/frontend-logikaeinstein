@@ -533,7 +533,7 @@ export default function Video() {
         return
       }
 
-      const phoneNumber = '6285212819618'
+      const phoneNumber = '6285212819618--'
       const message = `🔔 *PERMINTAAN UPGRADE PREMIUM* 🔔
 
 Halo Admin Logika Einstein,
