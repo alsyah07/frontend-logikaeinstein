@@ -151,7 +151,6 @@ export default function RedeemList() {
   return (
     <div className="container py-4 pb-5" style={{ maxWidth: '800px' }}>
       <h5 className="fw-bold mb-3 text-center">Manajemen Kode Redeem</h5>
-
       {loading ? (
         <div className="text-center py-5 text-muted">
           <div className="spinner-border text-primary mb-3" />
