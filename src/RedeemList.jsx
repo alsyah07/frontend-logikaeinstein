@@ -149,7 +149,23 @@ export default function RedeemList() {
   ]
 
   return (
-    <div className="container py-4 pb-5" style={{ maxWidth: '800px' }}>
+    <>
+      <header className="fixed-top bg-white border-bottom shadow-sm">
+        <div className="container" style={{ maxWidth: '800px' }}>
+          <div className="d-flex align-items-center justify-content-between py-2">
+            <div className="d-flex align-items-center gap-2">
+              <div
+                className="rounded-circle d-flex align-items-center justify-content-center text-white"
+                style={{ width: 36, height: 36, background: '#155ea0', fontWeight: 700, fontSize: 18 }}
+              >
+                R
+              </div>
+              <div className="fw-bold">Redeem</div>
+            </div>
+          </div>
+        </div>
+      </header>
+      <div className="container py-4 pb-5" style={{ maxWidth: '800px' }}>
       <h5 className="fw-bold mb-3 text-center">Manajemen Kode Redeem</h5>
       {loading ? (
         <div className="text-center py-5 text-muted">
@@ -317,7 +333,7 @@ export default function RedeemList() {
 
       <style>
         {`
-          body { padding-bottom: 70px !important; }
+          body { padding-bottom: 70px !important; padding-top: 60px !important; }
           @media (max-width: 576px) {
             h5.fw-bold { font-size: 1rem; }
             .card-body { padding: 0.75rem !important; }
@@ -325,5 +341,6 @@ export default function RedeemList() {
         `}
       </style>
     </div>
+    </>
   )
 }
