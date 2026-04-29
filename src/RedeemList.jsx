@@ -312,21 +312,27 @@ export default function RedeemList() {
           className={`btn flex-fill text-center border-0 ${activeTab === 'stats' ? 'text-primary fw-bold' : 'text-muted'}`}
           onClick={() => setActiveTab('stats')}
         >
-          📈
+          <div style={{ marginBottom: '4px', transform: activeTab === 'stats' ? 'scale(1.15)' : 'scale(1)', transition: 'transform 0.2s ease-in-out' }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+          </div>
           <div style={{ fontSize: '12px' }}>Statistik</div>
         </button>
         <button
           className={`btn flex-fill text-center border-0 ${activeTab === 'active' ? 'text-success fw-bold' : 'text-muted'}`}
           onClick={() => setActiveTab('active')}
         >
-          ✅
+          <div style={{ marginBottom: '4px', transform: activeTab === 'active' ? 'scale(1.15)' : 'scale(1)', transition: 'transform 0.2s ease-in-out' }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+          </div>
           <div style={{ fontSize: '12px' }}>Code Redeem Aktif</div>
         </button>
         <button
           className={`btn flex-fill text-center border-0 ${activeTab === 'used' ? 'text-danger fw-bold' : 'text-muted'}`}
           onClick={() => setActiveTab('used')}
         >
-          📊
+          <div style={{ marginBottom: '4px', transform: activeTab === 'used' ? 'scale(1.15)' : 'scale(1)', transition: 'transform 0.2s ease-in-out' }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+          </div>
           <div style={{ fontSize: '12px' }}>Terpakai</div>
         </button>
       </nav>

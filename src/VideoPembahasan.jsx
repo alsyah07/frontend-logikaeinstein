@@ -184,7 +184,7 @@ export default function VideoPembahasan() {
         const mapped = items.map((it, idx) => ({
           id_detail_video_mapel: it.id_detail_video_mapel,
           id_sub_mapel_detail: it.id_sub_mapel_detail,
-          title: it.sub_mapel || it.sub_mapel || `Video ${idx + 1}`,
+          title: judul || it.sub_mapel || `Video ${idx + 1}`,
           url: getEmbedUrl(it.video_mapel),
           originalUrl: it.video_mapel,
           views: it.reviews || it.members || '0',
@@ -266,6 +266,18 @@ export default function VideoPembahasan() {
     })
     setSearchParams({ v: item.id_sub_mapel_detail }, { replace: true })
     window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const handleNextVideo = () => {
+    if (currentIndex < playlist.length - 1) {
+      playVideo(playlist[currentIndex + 1], currentIndex + 1)
+    }
+  }
+
+  const handlePrevVideo = () => {
+    if (currentIndex > 0) {
+      playVideo(playlist[currentIndex - 1], currentIndex - 1)
+    }
   }
 
   const handleVideoLoad = () => {
@@ -519,7 +531,7 @@ export default function VideoPembahasan() {
         return
       }
 
-      const phoneNumber = '6285212819618-'
+      const phoneNumber = '6285591611938'
       const message = `🔔 *PERMINTAAN UPGRADE PREMIUM* 🔔
 
 Halo Admin Logika Einstein,
@@ -647,419 +659,397 @@ Terima kasih! 🙏`
   const hasNext = currentIndex < playlist.length - 1 && currentIndex >= 0
   const hasPrev = currentIndex > 0
 
-  const goToNext = () => {
-    if (hasNext) {
-      playVideo(playlist[currentIndex + 1], currentIndex + 1)
+  const styles = `
+    .text-primary-dark { color: #1a1a9e !important; }
+    .bg-primary-dark { background-color: #1a1a9e !important; }
+    .bg-light-purple { background-color: #eaf0fb !important; }
+    .nav-link-custom { color: white; text-decoration: none; font-weight: 600; font-size: 14px; margin: 0 15px; transition: opacity 0.2s; }
+    .nav-link-custom:hover { opacity: 0.8; color: white; }
+    .pill-toggle { display: inline-flex; border: 2px solid #1a1a9e; border-radius: 50px; overflow: hidden; margin: 0 auto; }
+    .pill-toggle-btn { background: transparent; color: #1a1a9e; border: none; padding: 10px 40px; font-weight: 700; font-size: 15px; transition: all 0.2s; }
+    .pill-toggle-btn.active { background: #1a1a9e; color: white; }
+    
+    .playlist-scroll::-webkit-scrollbar { width: 6px; }
+    .playlist-scroll::-webkit-scrollbar-track { background: transparent; }
+    .playlist-scroll::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
+    .playlist-scroll::-webkit-scrollbar-thumb:hover { background: #aaa; }
+    
+    @media (max-width: 768px) {
+        .nav-center-desktop { display: none !important; }
+        .pill-toggle-btn { padding: 8px 20px; font-size: 13px; }
+        .top-bar-container { flex-direction: column; align-items: flex-start !important; gap: 15px; }
+        .back-btn-container { position: static !important; }
+        .pill-container { width: 100%; text-align: center; }
     }
-  }
-
-  const goToPrev = () => {
-    if (hasPrev) {
-      playVideo(playlist[currentIndex - 1], currentIndex - 1)
-    }
-  }
+  `;
 
   return (
-    <div className="d-flex flex-column" style={{ minHeight: '100vh', backgroundColor: '#f8f9fa' }}>
-      {/* Header */}
-      <header className="glass-effect sticky-top" style={{ zIndex: 1020, borderBottom: '1px solid rgba(0,0,0,0.05)', background: 'rgba(255, 255, 255, 0.95)', backdropFilter: 'blur(10px)' }}>
-        <div className="container py-3" style={{ maxWidth: '1400px' }}>
-          <div className="d-flex align-items-center justify-content-between">
-            <div className="d-flex align-items-center gap-3">
-              <img
-                src="/images/logo_logika.png"
-                alt="Logika Einstein"
-                className="rounded-3 flex-shrink-0"
-                style={{ width: '40px', height: '40px', objectFit: 'cover' }}
-              />
-              <div>
-                <h6 className="fw-bold mb-0">{course?.title || 'Logika Einstein'}</h6>
-                <small className="text-muted">
-                  {course?.category ? `${catData.emoji} ${course.category} • ${channel}` : channel}
-                </small>
-              </div>
-            </div>
-            <div className="d-flex align-items-center ms-auto gap-2">
-              {isPremiumUser && (
-                <span className="badge bg-warning text-dark rounded-pill px-3 py-2 me-2">
-                  ⭐ Premium
-                </span>
-              )}
-              {/* <button
-                className="btn btn-light rounded-pill px-3"
-                onClick={handleLoginOrRedeem}
-              >
-                {!currentUser ? 'Masuk ke Akun' : 'Redeem Kode'}
-              </button> */}
-              <button className="btn btn-light rounded-pill px-3" onClick={() => navigate(-1)}>
-                Kembali
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <main className="flex-grow-1 overflow-auto" style={{ paddingBottom: '40px' }}>
-        <div className="container" style={{ maxWidth: '1400px' }}>
-          <div className="row g-4 mt-2">
-            {/* Video Player Column */}
-            <div className="col-12 col-lg-8">
-              {/* Video Player */}
-              <div className="position-relative rounded-3 shadow-sm overflow-hidden bg-dark" style={{ paddingBottom: '56.25%' }}>
-                <PlayerContent />
+    <>
+      <style>{styles}</style>
+      <div className="d-flex flex-column" style={{ minHeight: '100vh', backgroundColor: '#f8f9fa' }}>
+        {/* Header */}
+        <header className="bg-primary-dark sticky-top" style={{ zIndex: 1020 }}>
+          <div className="container py-3" style={{ maxWidth: '1200px' }}>
+            <div className="d-flex align-items-center justify-content-between">
+              {/* Logo */}
+              <div className="d-flex align-items-center gap-2 cursor-pointer" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
+                <img
+                  src="/Logogram_LogikaEinstein_IndigoWhite_Transparent_Outline.png"
+                  alt="Logika Einstein"
+                  style={{ height: '50px', objectFit: 'contain' }}
+                />
+                <div className="text-white lh-1 d-none d-sm-block ms-1">
+                  <span className="fw-bold" style={{ fontSize: '18px', display: 'block' }}>Logika</span>
+                  <span className="fw-bold" style={{ fontSize: '18px' }}>Einstein<span style={{ fontSize: '12px' }}>.com</span></span>
+                </div>
               </div>
 
-              {/* Video Info */}
-              <div className="mt-3">
-                <div className="d-flex align-items-start justify-content-between gap-3 mb-2">
-                  <h4 className="fw-bold mb-0">{currentVideo.title} - {judul}</h4>
+              {/* Center Nav - Desktop Only */}
+              <div className="d-flex align-items-center nav-center-desktop">
+                <a href="#" className="nav-link-custom" onClick={(e) => { e.preventDefault(); navigate('/'); }}>FISIKA</a>
+                <a href="#" className="nav-link-custom" onClick={(e) => { e.preventDefault(); navigate('/'); }}>MATEMATIKA</a>
+                <a href="#" className="nav-link-custom" onClick={(e) => { e.preventDefault(); navigate('/'); }}>FAVORIT</a>
+              </div>
 
-                  {/* Save Button */}
+              {/* Right Icons */}
+              <div className="d-flex align-items-center gap-2 gap-md-3">
+                <button 
+                  className="btn btn-link p-0 text-white border border-white rounded-circle d-flex align-items-center justify-content-center"
+                  style={{ width: '36px', height: '36px' }}
+                  onClick={() => navigate('/')}
+                >
+                  <img src="/Icons/Icon_Cari_white.png" alt="Search" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
+                </button>
+                {currentUser ? (
                   <button
-                    className={`btn rounded-pill px-4 d-flex align-items-center gap-2 ${isSaved ? 'btn-warning' : 'btn-outline-secondary'
-                      }`}
-                    onClick={handleToggleSaveVideo}
-                    disabled={isSaving || !currentUser}
-                    title={isSaved ? 'Hapus dari arsip' : 'Simpan ke arsip'}
+                    className="d-flex align-items-center gap-2 px-3 py-1 rounded-pill text-white bg-transparent border border-white"
+                    style={{ height: '36px' }}
                   >
-                    {isSaving ? (
-                      <>
-                        <span className="spinner-border spinner-border-sm" role="status"></span>
-                        <span>Menyimpan...</span>
-                      </>
-                    ) : (
-                      <>
-                        <span style={{ fontSize: '20px' }}>{isSaved ? '⭐' : '☆'}</span>
-                        <span>{isSaved ? 'Tersimpan' : 'Simpan'}</span>
-                      </>
-                    )}
+                    <img src="/Icons/Icon_Profil_white.png" alt="Profile" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
+                    <span className="small fw-bold">{currentUser.name.split(' ')[0]}</span>
                   </button>
-                </div>
-
-                <div className="d-flex flex-wrap align-items-center gap-3 text-muted mb-3">
-                  <span>👁️ {currentVideo.views} x ditonton</span>
-                  <span>•</span>
-                  <span>📅 {currentVideo.date}</span>
-                </div>
-
-                {/* Navigation Buttons */}
-                {playlist.length > 1 && (
-                  <div className="d-flex gap-2 mb-3">
-                    <button
-                      className="btn btn-outline-primary rounded-pill px-4"
-                      disabled={!hasPrev}
-                      onClick={goToPrev}
-                    >
-                      ⬅️ Sebelumnya
-                    </button>
-                    <button
-                      className="btn rounded-pill px-4 text-white"
-                      style={{ background: catData.gradient, border: 'none' }}
-                      disabled={!hasNext}
-                      onClick={goToNext}
-                    >
-                      Selanjutnya ➡️
-                    </button>
-                  </div>
+                ) : (
+                  <button
+                    onClick={() => navigate('/')}
+                    className="d-flex align-items-center gap-2 px-3 py-1 rounded-pill text-primary-dark bg-white border-0"
+                    style={{ height: '36px' }}
+                  >
+                    <span className="small fw-bold">Login</span>
+                  </button>
                 )}
               </div>
+            </div>
+          </div>
+        </header>
 
-              {/* Description Card */}
-              <div className="card border-0 shadow-sm rounded-4 mt-3">
-                <div className="card-body">
-                  <h6 className="fw-bold mb-3">📝 Deskripsi</h6>
-                  <div className="text-muted" style={{ whiteSpace: 'pre-wrap' }}>
-                    {currentVideo.description || course?.description || 'Video pembelajaran untuk materi ini.'}
+        <main className="flex-grow-1 overflow-auto" style={{ paddingBottom: '40px' }}>
+          <div className="container py-4" style={{ maxWidth: '1200px' }}>
+            
+            {/* Top Bar with Back Button and Pill Toggle */}
+            <div className="d-flex align-items-center position-relative mb-4 top-bar-container">
+              <div className="back-btn-container position-absolute start-0">
+                <button 
+                  className="btn btn-link text-primary-dark text-decoration-none fw-bold p-0" 
+                  onClick={() => navigate(-1)}
+                  style={{ fontSize: '14px' }}
+                >
+                  ◀ kembali
+                </button>
+              </div>
+              <div className="w-100 pill-container text-center">
+                <div className="pill-toggle shadow-sm">
+                  <button 
+                    className="pill-toggle-btn" 
+                    onClick={() => navigate(`/video/${id}/${encodeURIComponent(judul)}/logika`, { state: { course, materi } })}
+                  >
+                    TEORI
+                  </button>
+                  <button className="pill-toggle-btn active">
+                    PEMBAHASAN SOAL
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="row g-4 mt-2">
+              {/* Video Player Column */}
+              <div className="col-12 col-lg-8">
+                {/* Video Player */}
+                <div className="position-relative shadow-sm overflow-hidden bg-dark" style={{ paddingBottom: '56.25%', borderRadius: '12px' }}>
+                  <PlayerContent />
+                </div>
+
+                {/* Video Info */}
+                <div className="mt-4 d-flex align-items-start justify-content-between flex-column flex-md-row gap-3">
+                  <div>
+                    <h2 className="fw-bold mb-0 text-uppercase" style={{ color: '#111', fontSize: '1.8rem' }}>
+                      {course?.title || 'Fisika Dasar'} - {currentVideo.title} ({currentIndex >= 0 ? currentIndex + 1 : 1})
+                    </h2>
+                    <div className="d-flex gap-2 mt-3">
+                      <button 
+                        onClick={handlePrevVideo} 
+                        disabled={currentIndex <= 0}
+                        className="btn btn-sm rounded-pill px-3 py-2 d-flex align-items-center gap-2"
+                        style={{ border: '1.5px solid #1a1a9e', color: '#1a1a9e', backgroundColor: '#f0f4ff', fontWeight: 'bold', fontSize: '12px' }}
+                      >
+                        <span style={{ fontSize: '14px' }}>⬅</span> Sebelumnya
+                      </button>
+                      <button 
+                        onClick={handleNextVideo} 
+                        disabled={currentIndex >= playlist.length - 1}
+                        className="btn btn-sm rounded-pill px-3 py-2 d-flex align-items-center gap-2"
+                        style={{ border: '1.5px solid #1a1a9e', color: 'white', backgroundColor: '#1a1a9e', fontWeight: 'bold', fontSize: '12px' }}
+                      >
+                        Selanjutnya <span style={{ fontSize: '14px' }}>➡</span>
+                      </button>
+                    </div>
+                  </div>
+                  <div className="d-flex flex-column align-items-end gap-2">
+                    <button
+                      className="btn rounded-pill px-4 py-2 d-flex align-items-center justify-content-center gap-2 fw-bold"
+                      onClick={handleToggleSaveVideo}
+                      disabled={isSaving || !currentUser}
+                      style={{
+                        border: '2px solid #6b7280',
+                        backgroundColor: 'white',
+                        color: '#374151',
+                        fontSize: '14px',
+                        minWidth: '120px'
+                      }}
+                    >
+                      {isSaving ? (
+                        <span className="spinner-border spinner-border-sm" role="status"></span>
+                      ) : (
+                        <>
+                          <span style={{ fontSize: '18px' }}>{isSaved ? '★' : '☆'}</span>
+                          <span>{isSaved ? 'Tersimpan' : 'Simpan'}</span>
+                        </>
+                      )}
+                    </button>
                   </div>
                 </div>
               </div>
 
-              {/* Course Info Card */}
-              {course && (
-                <div className="card border-0 shadow-sm rounded-4 mt-3">
-                  <div className="card-body">
-                    <div className="d-flex align-items-center gap-3">
-                      <div
-                        className="d-flex align-items-center justify-content-center rounded-3"
-                        style={{
-                          width: '56px',
-                          height: '56px',
-                          background: catData.gradient,
-                          fontSize: '24px'
-                        }}
-                      >
-                        {catData.emoji}
+              {/* Playlist Sidebar */}
+              <div className="col-12 col-lg-4">
+                <div className="card border-0 bg-light-purple p-4" style={{ borderRadius: '24px', minHeight: '100%' }}>
+                  <h5 className="fw-bold text-center text-primary-dark mb-1">
+                    📚 Playlist Video ({playlist.length})
+                  </h5>
+                  <div className="text-center mb-4">
+                    <small className="text-muted" style={{ fontSize: '12px' }}>
+                      Video {currentIndex >= 0 ? currentIndex + 1 : 1} dari {playlist.length}
+                    </small>
+                  </div>
+
+                  <div className="d-flex flex-column gap-3 playlist-scroll" style={{ maxHeight: '600px', overflowY: 'auto', paddingRight: '5px' }}>
+                    {isLoading ? (
+                      <div className="text-center py-5">
+                        <div className="spinner-border text-primary-dark" role="status">
+                          <span className="visually-hidden">Loading...</span>
+                        </div>
                       </div>
-                      <div>
-                        <h6 className="fw-bold mb-1">{course.title}</h6>
-                        <small className="text-muted">
-                          ⭐ {course.rating?.toFixed(1) || '0.0'} • 👥 {course.students || 0} siswa
-                        </small>
+                    ) : playlist.length === 0 ? (
+                      <div className="text-center py-5">
+                        <p className="text-muted small">Tidak ada video dalam daftar ini</p>
                       </div>
-                    </div>
+                    ) : (
+                      playlist.map((item, i) => {
+                        const active = isPlaying(item);
+                        return (
+                          <div
+                            key={item.id_detail_video_mapel || i}
+                            className={`d-flex align-items-center gap-3 p-3 mb-2 w-100 border-0 ${active ? 'rounded-3' : ''}`}
+                            style={{
+                              backgroundColor: active ? '#bfdbfe' : 'transparent',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s'
+                            }}
+                            onClick={() => playVideo(item, i)}
+                          >
+                            {/* Box Nomor / Icon */}
+                            <div 
+                              className="flex-shrink-0 rounded-3 d-flex align-items-center justify-content-center fw-bold"
+                              style={{ 
+                                width: '45px', 
+                                height: '40px', 
+                                backgroundColor: active ? 'rgba(255,255,255,0.5)' : '#e5e7eb',
+                                color: active ? '#1a1a9e' : '#666',
+                                fontSize: '16px'
+                              }}
+                            >
+                              {active ? '▶' : i + 1}
+                            </div>
+
+                            {/* Content */}
+                            <div className="flex-grow-1 min-w-0">
+                              <div className="d-flex align-items-center gap-2 flex-wrap">
+                                <div className={`fw-bold text-truncate ${active ? 'text-primary-dark' : 'text-dark'}`} style={{ fontSize: '14px' }}>
+                                  {course?.title || 'Fisika Dasar'} - {item.title} ({i + 1})
+                                </div>
+                                {item.premium && !isPremiumUser && (
+                                  <span className="badge rounded-pill text-dark" style={{ backgroundColor: '#fde047', fontSize: '10px', fontWeight: 'bold' }}>
+                                    Premium
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-muted" style={{ fontSize: '12px', marginTop: '1px' }}>
+                                {channel}
+                              </div>
+                              <div className="d-flex align-items-center gap-2 text-muted" style={{ fontSize: '11px', marginTop: '2px' }}>
+                                <span>👁️ {item.views}</span>
+                                <span>•</span>
+                                <span>📅 {item.date}</span>
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })
+                    )}
                   </div>
                 </div>
-              )}
-            </div>
+              </div>
 
-            {/* Playlist Sidebar */}
-            <div className="col-12 col-lg-4">
-              <div className="card border-0 shadow-sm rounded-4 sticky-top" style={{ top: '80px' }}>
-                <div className="card-header bg-white border-0 p-3">
-                  <h6 className="fw-bold mb-0">
-                    📚 Playlist Video ({playlist.length})
-                  </h6>
-                  {currentIndex >= 0 && (
-                    <small className="text-muted">Video {currentIndex + 1} dari {playlist.length}</small>
-                  )}
-                </div>
-
-                <div className="card-body p-0" style={{ maxHeight: '600px', overflowY: 'auto' }}>
-                  {isLoading ? (
-                    <div className="text-center py-5">
-                      <div className="spinner-border text-primary" role="status">
-                        <span className="visually-hidden">Loading...</span>
-                      </div>
-                      <p className="mt-2 text-muted small">Memuat playlist...</p>
-                    </div>
-                  ) : playlist.length === 0 ? (
-                    <div className="text-center py-5">
-                      <div style={{ fontSize: '48px', marginBottom: '16px' }}>📹</div>
-                      <p className="text-muted small">Tidak ada video dalam daftar ini</p>
-                    </div>
-                  ) : (
-                    playlist.map((item, i) => (
-                      <button
-                        key={item.id_detail_video_mapel || i}
-                        className={`w-100 d-flex align-items-start gap-3 text-start btn mb-2 border-0 ${isPlaying(item)
-                          ? 'text-white shadow'
-                          : 'btn-light'
-                          }`}
-                        style={{
-                          background: isPlaying(item) ? catData.gradient : 'transparent',
-                          transition: 'all 0.2s ease',
-                          padding: '12px 16px'
-                        }}
-                        onClick={() => playVideo(item, i)}
-                        disabled={isPlaying(item)}
-                      >
-                        <div
-                          className="rounded-2 d-flex align-items-center justify-content-center flex-shrink-0 fw-bold"
-                          style={{
-                            width: '60px',
-                            height: '45px',
-                            fontSize: '16px',
-                            backgroundColor: isPlaying(item) ? 'rgba(255,255,255,0.2)' : '#e5e7eb',
-                            color: isPlaying(item) ? 'white' : '#6b7280'
-                          }}
-                        >
-                          {isPlaying(item) ? '▶️' : i + 1}
-                        </div>
-
-                        <div className="flex-grow-1" style={{ minWidth: 0 }}>
-                          <div className={`d-flex align-items-center gap-2 mb-1`}>
-                            <div
-                              className="fw-semibold text-truncate"
-                              style={{ fontSize: '14px' }}
-                              title={item.title}
-                            >
-                              {item.title} - {judul}
-                            </div>
-                            {item.premium && (
-                              <span className="badge bg-warning text-dark rounded-pill flex-shrink-0" style={{ fontSize: '10px' }}>
-                                Premium
-                              </span>
-                            )}
-                          </div>
-                          <div className={`small ${isPlaying(item) ? 'text-white-50' : 'text-muted'}`}>
-                            {channel}
-                          </div>
-                          <div className={`small ${isPlaying(item) ? 'text-white-50' : 'text-muted'}`}>
-                            👁️ {item.views} • 📅 {item.date}
-                          </div>
-                        </div>
-                      </button>
-                    ))
-                  )}
+              {/* Description Section */}
+              <div className="col-12 col-lg-8 mt-5">
+                <div className="card border-0 bg-white p-4 p-md-5 shadow-sm" style={{ borderRadius: '24px' }}>
+                  <h4 className="fw-bold text-primary-dark mb-4 d-flex align-items-center gap-2">
+                    <span>📝</span> Deskripsi
+                  </h4>
+                  <p className="text-muted" style={{ whiteSpace: 'pre-wrap', lineHeight: '1.8' }}>
+                    {currentVideo.description || 'Tidak ada deskripsi untuk video ini.'}
+                  </p>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      </main>
+        </main>
 
-      {/* Modal Premium dengan Kode Redeem */}
-      <div
-        className={`modal fade ${showPayModal ? 'show d-block' : ''}`}
-        tabIndex="-1"
-        aria-hidden={!showPayModal}
-        style={{ backgroundColor: showPayModal ? 'rgba(0,0,0,0.5)' : 'transparent' }}
-      >
-        <div className="modal-dialog modal-dialog-centered">
-          <div className="modal-content rounded-4 border-0 shadow-lg">
-            <div className="modal-header border-0">
-              <h5 className="modal-title fw-bold">🔒 Konten Premium</h5>
-              <button
-                type="button"
-                className="btn-close"
-                onClick={() => {
-                  setShowPayModal(false)
-                  setRedeemCode('')
-                }}
-                aria-label="Close"
-              />
-            </div>
-            <div className="modal-body">
-              <p className="mb-3">
-                <div className="card border-0 bg-light rounded-3 p-3 mb-3">
-                  <h6 className="fw-bold mb-2">Biaya berlangganan: 1 juta rupiah/tahun</h6>
-                  <hr />
-                  <h6 className="fw-bold mb-2">✨ Keuntungan Premium:</h6>
-                  <ul className="mb-0">
-                    <li style={{ fontSize: '10px' }}>No redeem yg kamu dapat bisa digunakan selama setahun dan
-                      kamu bebas buka sebanyak banyaknya video dari materi kelas 7 hingga kelas 12</li>
-                    {/* <li>✅ Materi lengkap dan pembahasan</li> */}
-                  </ul>
-                </div>
-              </p>
-
-              {/* Kode Redeem Section */}
-              <div className="card border-0 bg-light rounded-3 p-3 mb-3">
-                <h6 className="fw-bold mb-2">🎟️ Punya Kode Redeem?</h6>
-                <p className="text-muted small mb-3">
-                  Masukkan kode redeem untuk mendapatkan akses premium
+        {/* Modal Premium dengan Kode Redeem */}
+        <div
+          className={`modal fade ${showPayModal ? 'show d-block' : ''}`}
+          tabIndex="-1"
+          aria-hidden={!showPayModal}
+          style={{ backgroundColor: showPayModal ? 'rgba(0,0,0,0.5)' : 'transparent' }}
+        >
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content rounded-4 border-0 shadow-lg">
+              <div className="modal-header border-0">
+                <h5 className="modal-title fw-bold">🔒 Konten Premium</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => {
+                    setShowPayModal(false)
+                    setRedeemCode('')
+                  }}
+                  aria-label="Close"
+                />
+              </div>
+              <div className="modal-body">
+                <p className="mb-3">
+                  <div className="card border-0 bg-light rounded-3 p-3 mb-3">
+                    <h6 className="fw-bold mb-2">Biaya berlangganan: 1 juta rupiah/tahun</h6>
+                    <hr />
+                    <h6 className="fw-bold mb-2">✨ Keuntungan Premium:</h6>
+                    <ul className="mb-0">
+                      <li style={{ fontSize: '10px' }}>No redeem yg kamu dapat bisa digunakan selama setahun dan
+                        kamu bebas buka sebanyak banyaknya video dari materi kelas 7 hingga kelas 12</li>
+                    </ul>
+                  </div>
                 </p>
-                <div className="input-group mb-2">
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Masukkan kode redeem"
-                    value={redeemCode}
-                    onChange={(e) => setRedeemCode(e.target.value.toUpperCase())}
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter' && redeemCode.trim()) {
-                        handleRedeemCode()
-                      }
-                    }}
-                    disabled={isRedeeming}
-                    maxLength={20}
-                    style={{
-                      borderRadius: '8px 0 0 8px',
-                      fontSize: '14px',
-                      letterSpacing: '1px',
-                      fontWeight: '600'
-                    }}
-                  />
-                  <button
-                    className="btn text-white"
-                    style={{
-                      background: catData.gradient,
-                      border: 'none',
-                      borderRadius: '0 8px 8px 0',
-                      minWidth: '100px'
-                    }}
-                    onClick={handleRedeemCode}
-                    disabled={isRedeeming || !redeemCode.trim()}
-                  >
-                    {isRedeeming ? (
-                      <>
-                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                        Proses...
-                      </>
-                    ) : (
-                      '✨ Gunakan'
-                    )}
-                  </button>
+
+                {/* Kode Redeem Section */}
+                <div className="card border-0 bg-light rounded-3 p-3 mb-3">
+                  <h6 className="fw-bold mb-2">🎟️ Punya Kode Redeem?</h6>
+                  <p className="text-muted small mb-3">
+                    Masukkan kode redeem untuk mendapatkan akses premium
+                  </p>
+                  <div className="input-group mb-2">
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Masukkan kode redeem"
+                      value={redeemCode}
+                      onChange={(e) => setRedeemCode(e.target.value.toUpperCase())}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter' && redeemCode.trim()) {
+                          handleRedeemCode()
+                        }
+                      }}
+                      disabled={isRedeeming}
+                      maxLength={20}
+                      style={{
+                        borderRadius: '8px 0 0 8px',
+                        fontSize: '14px',
+                        letterSpacing: '1px',
+                        fontWeight: '600'
+                      }}
+                    />
+                    <button
+                      className="btn text-white bg-primary-dark"
+                      style={{
+                        border: 'none',
+                        borderRadius: '0 8px 8px 0',
+                        minWidth: '100px'
+                      }}
+                      onClick={handleRedeemCode}
+                      disabled={isRedeeming || !redeemCode.trim()}
+                    >
+                      {isRedeeming ? (
+                        <>
+                          <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                          Proses...
+                        </>
+                      ) : (
+                        '✨ Gunakan'
+                      )}
+                    </button>
+                  </div>
+                  <small className="text-muted">
+                    Contoh format: PREMIUM2025
+                  </small>
                 </div>
-                <small className="text-muted">
-                  Contoh format: PREMIUM2025
-                </small>
-              </div>
 
-              {/* Divider */}
-              <div className="position-relative my-4">
-                <hr />
-                <span
-                  className="position-absolute top-50 start-50 translate-middle bg-white px-3 text-muted"
-                  style={{ fontSize: '14px' }}
+                <div className="position-relative my-4">
+                  <hr />
+                  <span
+                    className="position-absolute top-50 start-50 translate-middle bg-white px-3 text-muted"
+                    style={{ fontSize: '14px' }}
+                  >
+                    atau
+                  </span>
+                </div>
+
+                <div className="alert alert-info rounded-3 mb-0">
+                  <small>
+                    💬 Klik tombol di bawah untuk menghubungi admin via WhatsApp dan dapatkan kode redeem.
+                  </small>
+                </div>
+              </div>
+              <div className="modal-footer border-0">
+                <button
+                  className="btn btn-light rounded-pill px-4"
+                  onClick={() => {
+                    setShowPayModal(false)
+                    setRedeemCode('')
+                  }}
                 >
-                  atau
-                </span>
+                  Batal
+                </button>
+                <button
+                  className="btn rounded-pill px-4 text-white d-flex align-items-center gap-2 bg-primary-dark"
+                  style={{ border: 'none' }}
+                  onClick={handleUpgradePremium}
+                >
+                  <span>💬</span>
+                  <span>Dapatkan Kode</span>
+                </button>
               </div>
-
-              {/* Benefits Section */}
-
-
-              <div className="alert alert-info rounded-3 mb-0">
-                <small>
-                  💬 Klik tombol di bawah untuk menghubungi admin via WhatsApp dan dapatkan kode redeem.
-                </small>
-              </div>
-            </div>
-            <div className="modal-footer border-0">
-              <button
-                className="btn btn-light rounded-pill px-4"
-                onClick={() => {
-                  setShowPayModal(false)
-                  setRedeemCode('')
-                }}
-              >
-                Batal
-              </button>
-              <button
-                className="btn rounded-pill px-4 text-white d-flex align-items-center gap-2"
-                style={{ background: catData.gradient, border: 'none' }}
-                onClick={handleUpgradePremium}
-              >
-                <span>💬</span>
-                <span>Dapatkan Kode</span>
-              </button>
             </div>
           </div>
         </div>
       </div>
-
-      <style>{`
-        .btn:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-
-        .card-body::-webkit-scrollbar {
-          width: 6px;
-        }
-
-        .card-body::-webkit-scrollbar-track {
-          background: #f1f1f1;
-          border-radius: 10px;
-        }
-
-        .card-body::-webkit-scrollbar-thumb {
-          background: #888;
-          border-radius: 10px;
-        }
-
-        .card-body::-webkit-scrollbar-thumb:hover {
-          background: #555;
-        }
-
-        .glass-effect {
-          background: rgba(255, 255, 255, 0.95);
-          backdrop-filter: blur(10px);
-          -webkit-backdrop-filter: blur(10px);
-        }
-
-        .input-group input:focus {
-          box-shadow: none;
-          border-color: #dee2e6;
-        }
-
-        .input-group button:hover:not(:disabled) {
-          opacity: 0.9;
-          transform: scale(1.02);
-          transition: all 0.2s ease;
-        }
-      `}</style>
-    </div>
+    </>
   )
 }
