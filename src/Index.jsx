@@ -511,7 +511,7 @@ const styles = `
       background-color: #1a1a9e !important;
     }
     .bg-light-purple {
-      background-color: #eaf0fb !important;
+      background-color: #E8EFFF !important;
     }
     .border-primary-dark {
       border-color: #1a1a9e !important;
@@ -872,16 +872,20 @@ const renderContent = () => {
                                     Selamat Datang di
                                 </h4>
                                 <h1 className="hero-title mb-4 text-primary-dark" style={{ letterSpacing: '-1px' }}>
-                                    Logika<span className="fw-bold">Einstein</span><span style={{ fontSize: '0.9em', fontWeight: 'bold' }}>.com</span>
+                                    <img 
+                                        src="/Logotype_Logika_indigo.png" 
+                                        alt="LogikaEinstein.com" 
+                                        style={{ height: '60px', objectFit: 'contain' }} 
+                                    />
+                                    <span style={{ fontSize: '0.9em', fontWeight: 'bold' }}>.com</span>
                                 </h1>
                                 <button 
                                     className="btn bg-transparent border-primary-dark text-primary-dark fw-bold rounded-pill px-4 py-2 d-inline-flex align-items-center gap-2"
                                     style={{ borderWidth: '2px' }}
                                     onClick={() => {
-                                        const searchInput = document.getElementById('search-input');
-                                        if (searchInput) {
-                                            searchInput.focus();
-                                            searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                        const subjectSection = document.getElementById('subject-section');
+                                        if (subjectSection) {
+                                            subjectSection.scrollIntoView({ behavior: 'smooth' });
                                         }
                                     }}
                                 >
@@ -893,7 +897,7 @@ const renderContent = () => {
                                     src="/Logo_LogikaEinstein_Indigo.png" 
                                     alt="Logika Einstein Seal" 
                                     className="img-fluid hero-img"
-                                    style={{ maxWidth: '350px' }}
+                                    style={{ maxWidth: '350px', objectFit: 'contain' }}
                                 />
                             </div>
                         </div>
@@ -901,45 +905,10 @@ const renderContent = () => {
                 </div>
 
                 <div className="container mb-5 text-center" style={{ maxWidth: '1200px' }}>
-                    {/* Search Bar */}
-                    <div className="row justify-content-center mb-5">
-                        <div className="col-12 col-md-8 col-lg-6">
-                            <div className="position-relative">
-                                <div
-                                    className="position-absolute d-flex align-items-center justify-content-center"
-                                    style={{
-                                        left: '20px',
-                                        top: '50%',
-                                        transform: 'translateY(-50%)',
-                                        width: '20px',
-                                        height: '20px',
-                                        zIndex: 10
-                                    }}
-                                >
-                                    <img src="/Icons/Icon_Cari_indigo.png" alt="Search" style={{ width: '20px', height: '20px', objectFit: 'contain' }} />
-                                </div>
-                                <input
-                                    id="search-input"
-                                    type="text"
-                                    className="form-control rounded-pill shadow-sm"
-                                    placeholder="Cari Mata Pelajaran..."
-                                    value={query}
-                                    onChange={(e) => setQuery(e.target.value)}
-                                    style={{
-                                        backgroundColor: 'white',
-                                        border: '2px solid #eaf0fb',
-                                        paddingLeft: '52px',
-                                        paddingRight: '24px',
-                                        fontSize: '15px',
-                                        height: '56px',
-                                        color: '#1a1a9e'
-                                    }}
-                                />
-                            </div>
-                        </div>
-                    </div>
+
 
                     {/* Category Filter Pill */}
+                                    <div id="subject-section"></div>
                     {!isLoadingCategories && categories.length > 0 && (
                         <div className="mb-5">
                             <div className="pill-toggle shadow-sm">
@@ -992,7 +961,7 @@ const renderContent = () => {
                                         <div
                                             className={`card border-0 card-hover bg-light-purple d-flex flex-row align-items-center p-3 p-md-4 ${!isClassCard ? 'justify-content-center' : ''}`}
                                             style={{
-                                                borderRadius: '24px',
+                                                borderRadius: '35px',
                                                 cursor: 'pointer',
                                                 minHeight: isClassCard ? '120px' : '140px',
                                                 gap: '15px'
@@ -1021,7 +990,7 @@ const renderContent = () => {
                                                         {c.title}
                                                     </h4>
                                                 )}
-                                                {c.description && !isClassCard && (
+                                                {c.description && !isClassCard && !titleLower.includes('fisika dasar') && (
                                                     <p className="mt-2 text-muted small mb-0">
                                                         {c.description.length > 60 ? `${c.description.substring(0, 60)}...` : c.description}
                                                     </p>
@@ -1184,50 +1153,62 @@ return (
                 className="bg-primary-dark sticky-top"
                 style={{ zIndex: 1020 }}
             >
-                <div className="container py-3" style={{ maxWidth: '1200px' }}>
+                <div className="container py-2" style={{ maxWidth: '1200px' }}>
                     <div className="d-flex align-items-center justify-content-between">
                         {/* Logo */}
-                        <div className="d-flex align-items-center gap-2 cursor-pointer" onClick={() => setTab('Home')} style={{ cursor: 'pointer' }}>
+                        <div className="d-flex align-items-center gap-1 cursor-pointer" onClick={() => setTab('Home')} style={{ cursor: 'pointer' }}>
                             <img
                                 src="/Logogram_LogikaEinstein_IndigoWhite_Transparent_Outline.png"
                                 alt="Logika Einstein"
                                 style={{
-                                    height: '50px',
+                                    height: '35px',
                                     objectFit: 'contain'
                                 }}
                             />
-                            <div className="text-white lh-1 d-none d-sm-block ms-1">
-                                <span className="fw-bold" style={{ fontSize: '18px', display: 'block' }}>Logika</span>
-                                <span className="fw-bold" style={{ fontSize: '18px' }}>Einstein<span style={{ fontSize: '12px' }}>.com</span></span>
-                            </div>
+                            <img
+                                src="/Logotype_Logika_white.png"
+                                alt="Logika Einstein"
+                                style={{
+                                    height: '25px',
+                                    objectFit: 'contain'
+                                }}
+                            />
                         </div>
 
                         {/* Center Nav - Desktop Only */}
                         <div className="d-flex align-items-center nav-center-desktop">
                             <a href="#" className="nav-link-custom" onClick={(e) => { e.preventDefault(); setTab('Home'); setCategory('Fisika'); }}>FISIKA</a>
                             <a href="#" className="nav-link-custom" onClick={(e) => { e.preventDefault(); setTab('Home'); setCategory('Matematika'); }}>MATEMATIKA</a>
-                            <a href="#" className="nav-link-custom" onClick={(e) => { e.preventDefault(); setTab('Riwayat'); }}>FAVORIT</a>
+                            {currentUser && (
+                                <a href="#" className="nav-link-custom" onClick={(e) => { e.preventDefault(); setTab('Riwayat'); }}>FAVORIT</a>
+                            )}
                         </div>
 
                         {/* Right Icons */}
                         <div className="d-flex align-items-center gap-2 gap-md-3">
-                            {/* Search Icon (focuses search input if on home) */}
-                            <button 
-                                className="btn btn-link p-0 text-white border border-white rounded-circle d-flex align-items-center justify-content-center"
-                                style={{ width: '36px', height: '36px' }}
-                                onClick={() => {
-                                    setTab('Home');
-                                    setTimeout(() => {
-                                        const searchInput = document.getElementById('search-input');
-                                        if (searchInput) {
-                                            searchInput.focus();
-                                            searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                        }
-                                    }, 100);
-                                }}
-                            >
-                                <img src="/Icons/Icon_Cari_white.png" alt="Search" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
-                            </button>
+                            {/* Integrated Search Bar */}
+                            <div className="position-relative d-flex align-items-center">
+                                <input
+                                    type="text"
+                                    className="form-control rounded-pill bg-white border-0"
+                                    placeholder="Cari..."
+                                    value={query}
+                                    onChange={(e) => {
+                                        setTab('Home');
+                                        setQuery(e.target.value);
+                                    }}
+                                    style={{
+                                        height: '36px',
+                                        paddingLeft: '35px',
+                                        fontSize: '13px',
+                                        width: '150px',
+                                        color: '#1a1a9e'
+                                    }}
+                                />
+                                <div className="position-absolute" style={{ left: '12px', top: '50%', transform: 'translateY(-50%)' }}>
+                                    <img src="/Icons/Icon_Cari_indigo.png" alt="Search" style={{ width: '15px', height: '15px', objectFit: 'contain' }} />
+                                </div>
+                            </div>
 
                             {currentUser ? (
                                 <button
@@ -1241,10 +1222,10 @@ return (
                             ) : (
                                 <button
                                     onClick={() => setShowAuthModal(true)}
-                                    className="d-flex align-items-center gap-2 px-3 py-1 rounded-pill text-primary-dark bg-white border-0"
+                                    className="d-flex align-items-center gap-2 px-4 py-1 rounded-pill text-primary-dark bg-white border-0"
                                     style={{ height: '36px' }}
                                 >
-                                    <span className="small fw-bold">Login</span>
+                                    <span className="small" style={{ fontWeight: '900', textTransform: 'uppercase' }}>Login</span>
                                 </button>
                             )}
                         </div>
@@ -1258,50 +1239,6 @@ return (
                     {renderContent()}
                 </div>
             </main>
-
-            {/* Bottom Navigation */}
-            <nav
-                className="navbar fixed-bottom glass-effect border-top"
-                style={{
-                    boxShadow: '0 -4px 20px rgba(0,0,0,0.08)',
-                    zIndex: 1010,
-                    paddingTop: '10px',
-                    paddingBottom: '10px',
-                }}
-            >
-                <div className="container d-flex justify-content-around" style={{ maxWidth: '1200px' }}>
-                    {(currentUser
-                        ? [
-                            { id: 'Home', label: 'Home', icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg> },
-                            { id: 'Riwayat', label: 'Favorit', icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg> },
-                            { id: 'Profil', label: 'Profil', icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg> },
-                        ]
-                        : [
-                            { id: 'Home', label: 'Home', icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg> },
-                            { id: 'Riwayat', label: 'Favorit', icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg> },
-                        ]
-                    ).map(({ id, label, icon }) => (
-                        <button
-                            key={id}
-                            className={`nav-item btn d-flex flex-column align-items-center border-0 p-2 ${tab === id ? 'active' : ''}`}
-                            onClick={() => setTab(id)}
-                            style={{
-                                fontSize: '11px',
-                                color: tab === id ? '#1a1a9e' : '#9ca3af',
-                                transition: 'all 0.3s ease',
-                                minWidth: '70px',
-                                background: 'transparent',
-                                fontWeight: tab === id ? '700' : '600',
-                            }}
-                        >
-                            <div style={{ marginBottom: '4px', transform: tab === id ? 'scale(1.15)' : 'scale(1)', transition: 'transform 0.2s ease-in-out' }}>
-                                {icon}
-                            </div>
-                            <small style={{ fontSize: '12px' }}>{label}</small>
-                        </button>
-                    ))}
-                </div>
-            </nav>
         </div>
 
         {/* Modal Autentikasi */}
@@ -1315,7 +1252,7 @@ return (
                 <div className="modal-content rounded-4">
                     <div className="modal-header border-0">
                         <h5 className="modal-title fw-bold">
-                            {authTab === 'login' ? '🔐 Masuk ke Akun' : '📝 Daftar Akun Baru'}
+                            {authTab === 'login' ? '🔐 MASUK KE AKUN' : '📝 DAFTAR AKUN BARU'}
                         </h5>
                         <button
                             type="button"
@@ -1338,7 +1275,7 @@ return (
                                 onClick={() => handleTabSwitch('login')}
                                 disabled={isLoading}
                             >
-                                Login
+                                LOGIN
                             </button>
                             <button
                                 className={`btn rounded-pill px-4 py-2 flex-grow-1 ${authTab === 'register'
@@ -1348,7 +1285,7 @@ return (
                                 onClick={() => handleTabSwitch('register')}
                                 disabled={isLoading}
                             >
-                                Register
+                                REGISTER
                             </button>
                         </div>
 
@@ -1360,7 +1297,7 @@ return (
                                     <input
                                         type="email"
                                         className="form-control rounded-pill px-4 py-2"
-                                        placeholder="nama@contoh.com"
+                                        placeholder="NAMA@CONTOH.COM"
                                         value={loginEmail}
                                         onChange={(e) => setLoginEmail(e.target.value)}
                                         required
@@ -1390,7 +1327,7 @@ return (
                                             Memproses...
                                         </>
                                     ) : (
-                                        '🚀 Masuk'
+                                        '🚀 MASUK'
                                     )}
                                 </button>
                             </form>
@@ -1460,7 +1397,7 @@ return (
                                             Memproses...
                                         </>
                                     ) : (
-                                        '✨ Daftar Sekarang'
+                                        '✨ DAFTAR SEKARANG'
                                     )}
                                 </button>
                             </form>

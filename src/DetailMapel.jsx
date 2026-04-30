@@ -120,7 +120,7 @@ export default function DetailMapel() {
     const styles = `
     .text-primary-dark { color: #1a1a9e !important; }
     .bg-primary-dark { background-color: #1a1a9e !important; }
-    .bg-light-purple { background-color: #eaf0fb !important; }
+    .bg-light-purple { background-color: #E8EFFF !important; }
     .nav-link-custom { color: white; text-decoration: none; font-weight: 600; font-size: 14px; margin: 0 15px; transition: opacity 0.2s; }
     .nav-link-custom:hover { opacity: 0.8; color: white; }
     .hover-card { transition: all 0.2s; }
@@ -138,32 +138,41 @@ export default function DetailMapel() {
     }
     `;
 
+    const handleItemClick = (m) => {
+        if (m.id_sub_detail_mapel && m.judul) {
+            navigate(`/video/${m.id_sub_detail_mapel}/${encodeURIComponent(m.judul)}/logika`)
+        }
+    }
+
     return (
         <>
             <style>{styles}</style>
             <div className="d-flex flex-column" style={{ minHeight: '100vh', backgroundColor: '#f8f9fa' }}>
                 {/* Header diselaraskan dengan Index */}
                 <header className="bg-primary-dark sticky-top" style={{ zIndex: 1020 }}>
-                    <div className="container py-3" style={{ maxWidth: '1200px' }}>
+                    <div className="container py-2" style={{ maxWidth: '1200px' }}>
                         <div className="d-flex align-items-center justify-content-between">
                             {/* Logo */}
-                            <div className="d-flex align-items-center gap-2 cursor-pointer" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
+                            <div className="d-flex align-items-center gap-1 cursor-pointer" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
                                 <img
                                     src="/Logogram_LogikaEinstein_IndigoWhite_Transparent_Outline.png"
                                     alt="Logika Einstein"
-                                    style={{ height: '50px', objectFit: 'contain' }}
+                                    style={{ height: '35px', objectFit: 'contain' }}
                                 />
-                                <div className="text-white lh-1 d-none d-sm-block ms-1">
-                                    <span className="fw-bold" style={{ fontSize: '18px', display: 'block' }}>Logika</span>
-                                    <span className="fw-bold" style={{ fontSize: '18px' }}>Einstein<span style={{ fontSize: '12px' }}>.com</span></span>
-                                </div>
+                                <img
+                                    src="/Logotype_Logika_white.png"
+                                    alt="Logika Einstein"
+                                    style={{ height: '25px', objectFit: 'contain' }}
+                                />
                             </div>
 
                             {/* Center Nav - Desktop Only */}
                             <div className="d-flex align-items-center nav-center-desktop">
                                 <a href="#" className="nav-link-custom" onClick={(e) => { e.preventDefault(); navigate('/'); }}>FISIKA</a>
                                 <a href="#" className="nav-link-custom" onClick={(e) => { e.preventDefault(); navigate('/'); }}>MATEMATIKA</a>
-                                <a href="#" className="nav-link-custom" onClick={(e) => { e.preventDefault(); navigate('/'); }}>FAVORIT</a>
+                                {currentUser && (
+                                    <a href="#" className="nav-link-custom" onClick={(e) => { e.preventDefault(); navigate('/'); }}>FAVORIT</a>
+                                )}
                             </div>
 
                             {/* Right Icons */}
@@ -186,10 +195,10 @@ export default function DetailMapel() {
                                 ) : (
                                     <button
                                         onClick={() => navigate('/')}
-                                        className="d-flex align-items-center gap-2 px-3 py-1 rounded-pill text-primary-dark bg-white border-0"
+                                        className="d-flex align-items-center gap-2 px-4 py-1 rounded-pill text-primary-dark bg-white border-0"
                                         style={{ height: '36px' }}
                                     >
-                                        <span className="small fw-bold">Login</span>
+                                        <span className="small" style={{ fontWeight: '900', textTransform: 'uppercase' }}>Login</span>
                                     </button>
                                 )}
                             </div>
@@ -242,7 +251,7 @@ export default function DetailMapel() {
                                             key={m.id} 
                                             className="card border-0 bg-white hover-card d-flex flex-row align-items-center px-3 px-md-4 py-3"
                                             style={{ borderRadius: '16px', cursor: 'pointer', minHeight: '70px' }}
-                                            onClick={() => handleOpenModal(m)}
+                                            onClick={() => handleItemClick(m)}
                                         >
                                             <div className="fw-bold text-primary-dark list-index-text text-center">
                                                 {idx + 1}

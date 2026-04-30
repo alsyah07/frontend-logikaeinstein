@@ -720,23 +720,26 @@ Terima kasih! 🙏`
           <div className="container py-3" style={{ maxWidth: '1200px' }}>
             <div className="d-flex align-items-center justify-content-between">
               {/* Logo */}
-              <div className="d-flex align-items-center gap-2 cursor-pointer" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
+              <div className="d-flex align-items-center gap-1 cursor-pointer" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
                 <img
                   src="/Logogram_LogikaEinstein_IndigoWhite_Transparent_Outline.png"
                   alt="Logika Einstein"
-                  style={{ height: '50px', objectFit: 'contain' }}
+                  style={{ height: '35px', objectFit: 'contain' }}
                 />
-                <div className="text-white lh-1 d-none d-sm-block ms-1">
-                  <span className="fw-bold" style={{ fontSize: '18px', display: 'block' }}>Logika</span>
-                  <span className="fw-bold" style={{ fontSize: '18px' }}>Einstein<span style={{ fontSize: '12px' }}>.com</span></span>
-                </div>
+                <img
+                  src="/Logotype_Logika_white.png"
+                  alt="Logika Einstein"
+                  style={{ height: '25px', objectFit: 'contain' }}
+                />
               </div>
 
               {/* Center Nav - Desktop Only */}
               <div className="d-flex align-items-center nav-center-desktop">
                 <a href="#" className="nav-link-custom" onClick={(e) => { e.preventDefault(); navigate('/'); }}>FISIKA</a>
                 <a href="#" className="nav-link-custom" onClick={(e) => { e.preventDefault(); navigate('/'); }}>MATEMATIKA</a>
-                <a href="#" className="nav-link-custom" onClick={(e) => { e.preventDefault(); navigate('/'); }}>FAVORIT</a>
+                {currentUser && (
+                  <a href="#" className="nav-link-custom" onClick={(e) => { e.preventDefault(); navigate('/'); }}>FAVORIT</a>
+                )}
               </div>
 
               {/* Right Icons */}
@@ -759,10 +762,10 @@ Terima kasih! 🙏`
                 ) : (
                   <button
                     onClick={() => navigate('/')}
-                    className="d-flex align-items-center gap-2 px-3 py-1 rounded-pill text-primary-dark bg-white border-0"
+                    className="d-flex align-items-center gap-2 px-4 py-1 rounded-pill text-primary-dark bg-white border-0"
                     style={{ height: '36px' }}
                   >
-                    <span className="small fw-bold">Login</span>
+                    <span className="small" style={{ fontWeight: '900', textTransform: 'uppercase' }}>Login</span>
                   </button>
                 )}
               </div>
@@ -810,8 +813,8 @@ Terima kasih! 🙏`
                 {/* Video Info */}
                 <div className="mt-4 d-flex align-items-start justify-content-between flex-column flex-md-row gap-3">
                   <div>
-                    <h2 className="fw-bold mb-0 text-uppercase" style={{ color: '#111', fontSize: '1.8rem' }}>
-                      {course?.title || 'Fisika Dasar'} - {currentVideo.title} ({currentIndex >= 0 ? currentIndex + 1 : 1})
+                    <h2 className="fw-bold mb-0 text-uppercase" style={{ color: '#111', fontSize: '1.4rem', lineHeight: '1.4' }}>
+                      {course?.title || 'Fisika Dasar'} <br/> {currentVideo.title}
                     </h2>
                     <div className="d-flex gap-2 mt-3">
                       <button 
@@ -860,7 +863,7 @@ Terima kasih! 🙏`
 
               {/* Playlist Sidebar */}
               <div className="col-12 col-lg-4">
-                <div className="card border-0 bg-light-purple p-4" style={{ borderRadius: '24px', minHeight: '100%' }}>
+                <div className="card border-0 bg-light-purple p-4" style={{ borderRadius: '24px', minHeight: '100%', backgroundColor: '#E8EFFF' }}>
                   <h5 className="fw-bold text-center text-primary-dark mb-1">
                     📚 Playlist Video ({playlist.length})
                   </h5>
@@ -913,21 +916,13 @@ Terima kasih! 🙏`
                             <div className="flex-grow-1 min-w-0">
                               <div className="d-flex align-items-center gap-2 flex-wrap">
                                 <div className={`fw-bold text-truncate ${active ? 'text-primary-dark' : 'text-dark'}`} style={{ fontSize: '14px' }}>
-                                  {course?.title || 'Fisika Dasar'} - {item.title} ({i + 1})
+                                  {item.title}
                                 </div>
                                 {item.premium && !isPremiumUser && (
                                   <span className="badge rounded-pill text-dark" style={{ backgroundColor: '#fde047', fontSize: '10px', fontWeight: 'bold' }}>
                                     Premium
                                   </span>
                                 )}
-                              </div>
-                              <div className="text-muted" style={{ fontSize: '12px', marginTop: '1px' }}>
-                                {channel}
-                              </div>
-                              <div className="d-flex align-items-center gap-2 text-muted" style={{ fontSize: '11px', marginTop: '2px' }}>
-                                <span>👁️ {item.views}</span>
-                                <span>•</span>
-                                <span>📅 {item.date}</span>
                               </div>
                             </div>
                           </div>
@@ -938,17 +933,7 @@ Terima kasih! 🙏`
                 </div>
               </div>
 
-              {/* Description Section */}
-              <div className="col-12 col-lg-8 mt-5">
-                <div className="card border-0 bg-white p-4 p-md-5 shadow-sm" style={{ borderRadius: '24px' }}>
-                  <h4 className="fw-bold text-primary-dark mb-4 d-flex align-items-center gap-2">
-                    <span>📝</span> Deskripsi
-                  </h4>
-                  <p className="text-muted" style={{ whiteSpace: 'pre-wrap', lineHeight: '1.8' }}>
-                    {currentVideo.description || 'Tidak ada deskripsi untuk video ini.'}
-                  </p>
-                </div>
-              </div>
+
             </div>
           </div>
         </main>
