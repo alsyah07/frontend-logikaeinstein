@@ -872,12 +872,7 @@ const renderContent = () => {
                                     Selamat Datang di
                                 </h4>
                                 <h1 className="hero-title mb-4 text-primary-dark" style={{ letterSpacing: '-1px' }}>
-                                    <img 
-                                        src="/Logotype_Logika_indigo.png" 
-                                        alt="LogikaEinstein.com" 
-                                        style={{ height: '60px', objectFit: 'contain' }} 
-                                    />
-                                    <span style={{ fontSize: '0.9em', fontWeight: 'bold' }}>.com</span>
+                                    Logika<span className="fw-bold">Einstein</span><span style={{ fontSize: '0.9em', fontWeight: 'bold' }}>.com</span>
                                 </h1>
                                 <button 
                                     className="btn bg-transparent border-primary-dark text-primary-dark fw-bold rounded-pill px-4 py-2 d-inline-flex align-items-center gap-2"
@@ -1156,23 +1151,19 @@ return (
                 <div className="container py-2" style={{ maxWidth: '1200px' }}>
                     <div className="d-flex align-items-center justify-content-between">
                         {/* Logo */}
-                        <div className="d-flex align-items-center gap-1 cursor-pointer" onClick={() => setTab('Home')} style={{ cursor: 'pointer' }}>
+                        <div className="d-flex align-items-center gap-2 cursor-pointer" onClick={() => setTab('Home')} style={{ cursor: 'pointer' }}>
                             <img
                                 src="/Logogram_LogikaEinstein_IndigoWhite_Transparent_Outline.png"
                                 alt="Logika Einstein"
                                 style={{
-                                    height: '35px',
+                                    height: '50px',
                                     objectFit: 'contain'
                                 }}
                             />
-                            <img
-                                src="/Logotype_Logika_white.png"
-                                alt="Logika Einstein"
-                                style={{
-                                    height: '25px',
-                                    objectFit: 'contain'
-                                }}
-                            />
+                            <div className="text-white lh-1 d-none d-sm-block ms-1">
+                                <span className="fw-bold" style={{ fontSize: '18px', display: 'block' }}>Logika</span>
+                                <span className="fw-bold" style={{ fontSize: '18px' }}>Einstein<span style={{ fontSize: '12px' }}>.com</span></span>
+                            </div>
                         </div>
 
                         {/* Center Nav - Desktop Only */}

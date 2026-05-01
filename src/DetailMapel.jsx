@@ -153,17 +153,16 @@ export default function DetailMapel() {
                     <div className="container py-2" style={{ maxWidth: '1200px' }}>
                         <div className="d-flex align-items-center justify-content-between">
                             {/* Logo */}
-                            <div className="d-flex align-items-center gap-1 cursor-pointer" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
+                            <div className="d-flex align-items-center gap-2 cursor-pointer" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
                                 <img
                                     src="/Logogram_LogikaEinstein_IndigoWhite_Transparent_Outline.png"
                                     alt="Logika Einstein"
-                                    style={{ height: '35px', objectFit: 'contain' }}
+                                    style={{ height: '50px', objectFit: 'contain' }}
                                 />
-                                <img
-                                    src="/Logotype_Logika_white.png"
-                                    alt="Logika Einstein"
-                                    style={{ height: '25px', objectFit: 'contain' }}
-                                />
+                                <div className="text-white lh-1 d-none d-sm-block ms-1">
+                                    <span className="fw-bold" style={{ fontSize: '18px', display: 'block' }}>Logika</span>
+                                    <span className="fw-bold" style={{ fontSize: '18px' }}>Einstein<span style={{ fontSize: '12px' }}>.com</span></span>
+                                </div>
                             </div>
 
                             {/* Center Nav - Desktop Only */}
