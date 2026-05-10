@@ -15,9 +15,25 @@ export default function Video() {
   const course = state?.course
   const materi = state?.materi
 
+  const titleToCheck = (course?.title || judul || '').toLowerCase();
+  const titleToCheck = (course?.title || judul || '').toLowerCase();
+  const isOnlyPembahasan = titleToCheck.includes('kelas 7') || titleToCheck.includes('kls 7') ||
+                           titleToCheck.includes('kelas 8') || titleToCheck.includes('kls 8') ||
+                           titleToCheck.includes('kelas 9') || titleToCheck.includes('kls 9') ||
+                           titleToCheck.includes('kelas 10') || titleToCheck.includes('kls 10') ||
+                           titleToCheck.includes('kelas 11') || titleToCheck.includes('kls 11') ||
+                           titleToCheck.includes('kelas 12') || titleToCheck.includes('kls 12') ||
+                           titleToCheck.includes('utbk');
+
   const initialTitle = materi?.judul || 'Materi Video'
   const initialUrl = materi?.videoUrl || ''
   const channel = 'Logika Einstein'
+  
+  useEffect(() => {
+    if (isOnlyPembahasan && id && judul) {
+      navigate(`/pembahasan/${id}/${encodeURIComponent(judul)}`, { replace: true, state: { course, materi } });
+    }
+  }, [isOnlyPembahasan, id, judul, navigate, course, materi]);
 
   // STATE
   const [currentVideo, setCurrentVideo] = useState({
@@ -788,11 +804,13 @@ Terima kasih! 🙏`
               </div>
               <div className="w-100 pill-container text-center">
                 <div className="pill-toggle shadow-sm">
-                  <button className="pill-toggle-btn active">
-                    TEORI
-                  </button>
+                  {!isOnlyPembahasan && (
+                    <button className="pill-toggle-btn active">
+                      TEORI
+                    </button>
+                  )}
                   <button 
-                    className="pill-toggle-btn" 
+                    className={`pill-toggle-btn ${isOnlyPembahasan ? 'active' : ''}`}
                     onClick={() => navigate(`/pembahasan/${id}/${encodeURIComponent(judul)}`, { state: { course, materi } })}
                   >
                     PEMBAHASAN SOAL

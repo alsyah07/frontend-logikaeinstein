@@ -13,6 +13,15 @@ export default function VideoPembahasan() {
   const course = state?.course
   const materi = state?.materi
 
+  const titleToCheck = (course?.title || judul || '').toLowerCase();
+  const isOnlyPembahasan = titleToCheck.includes('kelas 7') || titleToCheck.includes('kls 7') ||
+                           titleToCheck.includes('kelas 8') || titleToCheck.includes('kls 8') ||
+                           titleToCheck.includes('kelas 9') || titleToCheck.includes('kls 9') ||
+                           titleToCheck.includes('kelas 10') || titleToCheck.includes('kls 10') ||
+                           titleToCheck.includes('kelas 11') || titleToCheck.includes('kls 11') ||
+                           titleToCheck.includes('kelas 12') || titleToCheck.includes('kls 12') ||
+                           titleToCheck.includes('utbk');
+
   const initialTitle = materi?.judul || 'Materi Video'
   const initialUrl = materi?.videoUrl || ''
   const channel = 'Logika Einstein'
@@ -760,12 +769,14 @@ Terima kasih! 🙏`
               </div>
               <div className="w-100 pill-container text-center">
                 <div className="pill-toggle shadow-sm">
-                  <button 
-                    className="pill-toggle-btn" 
-                    onClick={() => navigate(`/video/${id}/${encodeURIComponent(judul)}/logika`, { state: { course, materi } })}
-                  >
-                    TEORI
-                  </button>
+                  {!isOnlyPembahasan && (
+                    <button 
+                      className="pill-toggle-btn" 
+                      onClick={() => navigate(`/video/${id}/${encodeURIComponent(judul)}/logika`, { state: { course, materi } })}
+                    >
+                      TEORI
+                    </button>
+                  )}
                   <button className="pill-toggle-btn active">
                     PEMBAHASAN SOAL
                   </button>

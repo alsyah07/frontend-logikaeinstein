@@ -138,9 +138,31 @@ export default function DetailMapel() {
     }
     `;
 
+    const isOnlyPembahasan = titleLower.includes('kelas 7') || titleLower.includes('kls 7') ||
+                             titleLower.includes('kelas 8') || titleLower.includes('kls 8') ||
+                             titleLower.includes('kelas 9') || titleLower.includes('kls 9') ||
+                             titleLower.includes('kelas 10') || titleLower.includes('kls 10') ||
+                             titleLower.includes('kelas 11') || titleLower.includes('kls 11') ||
+                             titleLower.includes('kelas 12') || titleLower.includes('kls 12') ||
+                             titleLower.includes('utbk');
+
     const handleItemClick = (m) => {
         if (m.id_sub_detail_mapel && m.judul) {
-            navigate(`/video/${m.id_sub_detail_mapel}/${encodeURIComponent(m.judul)}/logika`)
+            const itemTitleLower = m.judul.toLowerCase();
+            const isItemOnlyPembahasan = isOnlyPembahasan || 
+                                         itemTitleLower.includes('kelas 7') || itemTitleLower.includes('kls 7') ||
+                                         itemTitleLower.includes('kelas 8') || itemTitleLower.includes('kls 8') ||
+                                         itemTitleLower.includes('kelas 9') || itemTitleLower.includes('kls 9') ||
+                                         itemTitleLower.includes('kelas 10') || itemTitleLower.includes('kls 10') ||
+                                         itemTitleLower.includes('kelas 11') || itemTitleLower.includes('kls 11') ||
+                                         itemTitleLower.includes('kelas 12') || itemTitleLower.includes('kls 12') ||
+                                         itemTitleLower.includes('utbk');
+
+            if (isItemOnlyPembahasan) {
+                navigate(`/pembahasan/${m.id_sub_detail_mapel}/${encodeURIComponent(m.judul)}`, { state: { course, materi: m } })
+            } else {
+                navigate(`/video/${m.id_sub_detail_mapel}/${encodeURIComponent(m.judul)}/logika`, { state: { course, materi: m } })
+            }
         }
     }
 
@@ -299,15 +321,24 @@ export default function DetailMapel() {
                                     </div>
                                     <div className="modal-body">
                                         <div className="d-flex flex-column gap-3">
-                                            <button
-                                                type="button"
-                                                className="btn btn-outline-primary rounded-pill d-flex align-items-center justify-content-center gap-2 py-3 fw-bold"
-                                                style={{ borderWidth: '2px' }}
-                                                onClick={handleNavigateToVideo}
-                                            >
-                                                <span>🎬</span>
-                                                <span>Lihat Teori</span>
-                                            </button>
+                                            {!(isOnlyPembahasan || 
+                                               (selectedMateri?.judul || '').toLowerCase().includes('kelas 7') || (selectedMateri?.judul || '').toLowerCase().includes('kls 7') ||
+                                               (selectedMateri?.judul || '').toLowerCase().includes('kelas 8') || (selectedMateri?.judul || '').toLowerCase().includes('kls 8') ||
+                                               (selectedMateri?.judul || '').toLowerCase().includes('kelas 9') || (selectedMateri?.judul || '').toLowerCase().includes('kls 9') ||
+                                               (selectedMateri?.judul || '').toLowerCase().includes('kelas 10') || (selectedMateri?.judul || '').toLowerCase().includes('kls 10') ||
+                                               (selectedMateri?.judul || '').toLowerCase().includes('kelas 11') || (selectedMateri?.judul || '').toLowerCase().includes('kls 11') ||
+                                               (selectedMateri?.judul || '').toLowerCase().includes('kelas 12') || (selectedMateri?.judul || '').toLowerCase().includes('kls 12') ||
+                                               (selectedMateri?.judul || '').toLowerCase().includes('utbk')) && (
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-outline-primary rounded-pill d-flex align-items-center justify-content-center gap-2 py-3 fw-bold"
+                                                    style={{ borderWidth: '2px' }}
+                                                    onClick={handleNavigateToVideo}
+                                                >
+                                                    <span>🎬</span>
+                                                    <span>Lihat Teori</span>
+                                                </button>
+                                            )}
                                             <button
                                                 type="button"
                                                 className="btn btn-outline-primary rounded-pill d-flex align-items-center justify-content-center gap-2 py-3 fw-bold"

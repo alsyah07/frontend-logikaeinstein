@@ -839,9 +839,24 @@ const handleCourseClick = (course) => {
             state: { course }
         });
     } else if (course.type_mapel == 1) {
-        navigate(`/video/${course.id_sub_mapel}/${course.title}/mapel`, {
-            state: { course }
-        });
+        const titleLower = course.title.toLowerCase();
+        const isOnlyPembahasan = titleLower.includes('kelas 7') || 
+                                 titleLower.includes('kelas 8') || 
+                                 titleLower.includes('kelas 9') || 
+                                 titleLower.includes('kelas 10') || 
+                                 titleLower.includes('kelas 11') || 
+                                 titleLower.includes('kelas 12') || 
+                                 titleLower.includes('utbk');
+
+        if (isOnlyPembahasan) {
+            navigate(`/pembahasan/${course.id_sub_mapel}/${course.title}`, {
+                state: { course }
+            });
+        } else {
+            navigate(`/video/${course.id_sub_mapel}/${course.title}/mapel`, {
+                state: { course }
+            });
+        }
     }
 };
 
@@ -1031,7 +1046,22 @@ const renderContent = () => {
                                         borderRadius: '12px',
                                         cursor: 'pointer',
                                     }}
-                                    onClick={() => navigate(`/video/${item.id_sub_mapel_detail}/${encodeURIComponent(item.judul || item.title)}/logika`, { state: { course: item.courseData } })}
+                                    onClick={() => {
+                                        const titleLower = (item.courseTitle || '').toLowerCase();
+                                        const isOnlyPembahasan = titleLower.includes('kelas 7') || 
+                                                                 titleLower.includes('kelas 8') || 
+                                                                 titleLower.includes('kelas 9') || 
+                                                                 titleLower.includes('kelas 10') || 
+                                                                 titleLower.includes('kelas 11') || 
+                                                                 titleLower.includes('kelas 12') || 
+                                                                 titleLower.includes('utbk');
+                                        
+                                        if (isOnlyPembahasan) {
+                                            navigate(`/pembahasan/${item.id_sub_mapel_detail}/${encodeURIComponent(item.judul || item.title)}`, { state: { course: item.courseData, materi: item } });
+                                        } else {
+                                            navigate(`/video/${item.id_sub_mapel_detail}/${encodeURIComponent(item.judul || item.title)}/logika`, { state: { course: item.courseData, materi: item } });
+                                        }
+                                    }}
                                 >
                                     <div className="fw-bold" style={{ color: '#111', fontSize: '16px' }}>
                                         {item.courseTitle || item.category} - {item.title}
